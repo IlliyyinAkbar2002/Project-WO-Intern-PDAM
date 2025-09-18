@@ -26,7 +26,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${robotoCondensed.variable} antialiased`}>
+      <body suppressHydrationWarning className={`${robotoCondensed.variable} antialiased`}>
         <Toaster richColors position="bottom-right" />
         {children}
       </body>
