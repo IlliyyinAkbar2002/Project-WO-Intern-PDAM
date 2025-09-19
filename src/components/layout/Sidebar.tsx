@@ -20,8 +20,8 @@ interface MenuItem {
   subMenu?: { label: string; href: string }[];
 }
 
-const baseUserPath = "/user";
-const baseAdminPath = "/admin";
+const baseUserPath = "/protected/user";
+const baseAdminPath = "/protected/admin";
 
 const menuItems: Record<"admin" | "user", MenuItem[]> = {
   admin: [
