@@ -13,6 +13,7 @@ import SingleSelect from "@/components/shared/fields/SingleSelect";
 import { sortOptions } from "@/constants/options";
 import { columns } from "./columns";
 import MasterFormModal from "./modals/master-form-modal/MasterFormModal";
+import ConfirmModal from "@/components/shared/modals/ConfirmModal";
 import { useJenisWorkorderStore } from "@/store/useJenisWorkorderStore";
 import { JenisWorkorder } from "@/types";
 
@@ -39,6 +40,9 @@ export default function WorkorderCategoriesContainer({
   const modalId = searchParams.get("modal_id");
   const [sortData, setSortData] = useState(sort);
   const [searchText, setSearchText] = useState(search);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { resetForm } = useJenisWorkorderStore();
 
   useEffect(() => {
@@ -89,14 +93,34 @@ export default function WorkorderCategoriesContainer({
     router.push(`?${params.toString()}`);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = (id: number) => {
+    setDeleteId(id);
+    setShowConfirmModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+
+    setIsDeleting(true);
     try {
-      await deleteJenisWorkorder(id);
+      await deleteJenisWorkorder(deleteId);
       toast.success("Data berhasil dihapus");
+      setShowConfirmModal(false);
+      setDeleteId(null);
       router.refresh();
-    } catch (err) {
-      toast.error("Gagal menghapus data");
+    } catch (err: any) {
+      // Display specific error message from the service
+      const errorMessage = err.message || "Gagal menghapus data";
+      toast.error(errorMessage);
+      console.error("Delete error details:", err);
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const cancelDelete = () => {
+    setShowConfirmModal(false);
+    setDeleteId(null);
   };
 
   return (
@@ -146,6 +170,18 @@ export default function WorkorderCategoriesContainer({
       {modal && (
         <MasterFormModal modal={modal} id={modalId} onClose={closeModal} />
       )}
+
+      <ConfirmModal
+        open={showConfirmModal}
+        onClose={cancelDelete}
+        onConfirm={confirmDelete}
+        title="Konfirmasi Hapus"
+        description="Apakah Anda yakin ingin menghapus jenis workorder ini? Tindakan ini tidak dapat dibatalkan."
+        confirmText="Hapus"
+        cancelText="Batal"
+        variant="danger"
+        loading={isDeleting}
+      />
     </div>
   );
 }

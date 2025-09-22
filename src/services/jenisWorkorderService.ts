@@ -15,7 +15,7 @@ export const getJenisWorkorders = async (page?: number, limit?: number, search?:
     if (search) params.search = search;
     if (sort) params.sort = sort;
 
-    const response = await api.get<JenisWorkorderResponse>("/jenis-workorder", {params});
+    const response = await api.get<JenisWorkorderResponse>("/jenis-workorder", { params });
     return toCamelCase(response.data);
   } catch (error) {
     return { data: [], totalPages: 0, currentPage: 0 };
@@ -54,7 +54,16 @@ export const updateJenisWorkorder = async (id: number, data: JenisWorkorder): Pr
 export const deleteJenisWorkorder = async (id: number): Promise<void> => {
   try {
     await api.delete(`/jenis-workorder/${id}`);
-  } catch (error) {
-    throw new Error("Gagal menghapus jenis workorder!");
+  } catch (error: any) {
+    // Enhanced error handling with specific error messages
+    if (error.response?.status === 404) {
+      throw new Error("Endpoint delete belum tersedia di backend API. Silakan hubungi developer backend untuk implementasi DELETE /api/jenis-workorder/{id}");
+    } else if (error.response?.status === 500) {
+      throw new Error("Terjadi kesalahan server saat menghapus data");
+    } else if (error.response?.status === 403) {
+      throw new Error("Anda tidak memiliki izin untuk menghapus data ini");
+    } else {
+      throw new Error(`Gagal menghapus jenis workorder: ${error.response?.data?.message || error.message}`);
+    }
   }
 };
