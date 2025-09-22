@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from "axios";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
@@ -8,18 +8,28 @@ export const api = axios.create({
   baseURL: `${API_BASE}/api`,
   headers: {
     "Content-Type": "application/json",
+    Accept: "application/json",
   },
   timeout: 10000, // 10 second timeout
+  withCredentials: false,
 });
 
-// Add request interceptor for debugging
+// Add request interceptor for token injection and debugging
 api.interceptors.request.use(
   (config) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (token) {
+      config.headers = config.headers || {};
+      (config.headers as Record<string, string>).Authorization = `Bearer ${token}`;
+    }
+    config.headers = config.headers || {};
+    (config.headers as Record<string, string>).Accept = "application/json";
+
     console.log('Making API request:', {
       url: config.url,
       method: config.method,
       baseURL: config.baseURL,
-      fullURL: `${config.baseURL}${config.url}`
+      fullURL: `${config.baseURL ?? ''}${config.url ?? ''}`
     });
     return config;
   },
