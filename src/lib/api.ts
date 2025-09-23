@@ -1,61 +1,24 @@
 import axios from "axios";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
-console.log('API Base URL:', API_BASE);
-
-export const api = axios.create({
-  baseURL: `${API_BASE}/api`,
+const api = axios.create({
+  // baseURL: `http://127.0.0.1:8000/api`,
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api",
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
   },
-  timeout: 10000, // 10 second timeout
   withCredentials: false,
 });
 
-// Add request interceptor for token injection and debugging
-api.interceptors.request.use(
-  (config) => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    if (token) {
-      config.headers = config.headers || {};
-      (config.headers as Record<string, string>).Authorization = `Bearer ${token}`;
-    }
-    config.headers = config.headers || {};
-    (config.headers as Record<string, string>).Accept = "application/json";
-
-    console.log('Making API request:', {
-      url: config.url,
-      method: config.method,
-      baseURL: config.baseURL,
-      fullURL: `${config.baseURL ?? ''}${config.url ?? ''}`
-    });
-    return config;
-  },
-  (error) => {
-    console.error('Request interceptor error:', error);
-    return Promise.reject(error);
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
-);
+  config.headers.Accept = "application/json";
+  return config;
+});
 
-// Add response interceptor for debugging
-api.interceptors.response.use(
-  (response) => {
-    console.log('API response received:', {
-      status: response.status,
-      url: response.config.url,
-      data: response.data
-    });
-    return response;
-  },
-  (error) => {
-    console.error('API response error:', {
-      message: error.message,
-      status: error.response?.status,
-      data: error.response?.data,
-      url: error.config?.url
-    });
-    return Promise.reject(error);
-  }
-);
+export { api };

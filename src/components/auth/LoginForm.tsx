@@ -48,43 +48,42 @@ export default function LoginForm() {
       return;
     }
 
-    // try {
-    //   await csrf();
-    //   await api.post("/login", {
-    //     email,
-    //     password,
-    //   });
-    //   const { data: user } = await api.get("/me");
-
-    //   if (user.id_role === "admin") {
-    //     router.push("/admin");
-    //   } else if (user.id_role === "user") {
-    //     router.push("/user");
-    //   } else {
-    //     setError("Role tidak dikenali");
-    //   }
-    // } catch (err) {
-    //   setError("Login gagal. Periksa email dan password.");
-    // } finally {
-    //   setIsLoading(false);
-    // }
     try {
       // 1. login request
       // await api.get("/sanctum/csrf-cookie");
       const res = await api.post("/login", { email, password });
 
-      // 2. ambil token & role dari response backend
-      const token = res.data.access_token;
-      const userData = res.data.user;
-      // pastikan backend kirim "role" atau "user.role"
+      // Debug: Log the actual response structure
+      console.log("Login response data:", res.data);
+      console.log("Response structure:", {
+        hasAccessToken: !!res.data.access_token,
+        hasToken: !!res.data.token,
+        hasUser: !!res.data.user,
+        userData: res.data.user,
+        userRoleId: res.data.user?.role_id,
+        userRole: res.data.user?.role,
+        fullResponse: res.data
+      });
 
-      if (!token || !userData?.role_id) {
-        throw new Error("Token atau role tidak ditemukan di response");
+      // 2. ambil token & role dari response backend
+      // Try different possible token field names
+      const token = res.data.access_token || res.data.token;
+      const userData = res.data.user || res.data;
+
+      // Try different possible role field names
+      const roleId = userData?.role_id || userData?.role?.id || userData?.role;
+
+      if (!token) {
+        throw new Error(`Token tidak ditemukan di response. Available fields: ${Object.keys(res.data).join(', ')}`);
+      }
+
+      if (!roleId) {
+        throw new Error(`Role tidak ditemukan di response. User data: ${JSON.stringify(userData)}`);
       }
 
       // 3. simpan ke cookie agar bisa diakses di server component
       Cookies.set("token", token, { expires: 1 }); // 1 hari
-      Cookies.set("role", userData.role_id.toString(), { expires: 7 });
+      Cookies.set("role", roleId.toString(), { expires: 7 });
 
       // 4. set header default axios (optional, kalau mau auto-auth setelah login)
       api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
@@ -94,19 +93,15 @@ export default function LoginForm() {
       const user = me.data;
 
       // 6. redirect sesuai role
-      if (userData.role_id === 1) {
+      const numericRoleId = typeof roleId === 'string' ? parseInt(roleId) : roleId;
+      if (numericRoleId === 1) {
         router.push("/protected/admin");
-      } else if (userData.role_id === 2 || userData.role_id === 3) {
+      } else if (numericRoleId === 2 || numericRoleId === 3) {
         router.push("/protected/user");
       } else {
         setError("Role tidak dikenali");
       }
-      // } catch (err: any) {
-      //   console.error("Login error:", err.response?.data || err.message);
-      //   setError("Login gagal. Periksa email dan password.");
-      // } finally {
-      //   setIsLoading(false);
-      // }
+
     } catch (err: any) {
       if (err.response) {
         console.error("Login error response:", err.response.data);
@@ -116,6 +111,8 @@ export default function LoginForm() {
         console.error("Login error message:", err.message);
       }
       setError("Login gagal. Periksa email dan password.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -195,9 +192,8 @@ export default function LoginForm() {
         <button
           disabled={isLoading}
           type="submit"
-          className={`w-full text-standardWhite p-3 font-medium bg-primary-500 rounded-lg hover:bg-primary-600 ${
-            isLoading ? "opacity-50 cursor-not-allowed" : ""
-          }`}
+          className={`w-full text-standardWhite p-3 font-medium bg-primary-500 rounded-lg hover:bg-primary-600 ${isLoading ? "opacity-50 cursor-not-allowed" : ""
+            }`}
         >
           {isLoading ? "Loading..." : "Masuk"}
         </button>
