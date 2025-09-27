@@ -3,7 +3,7 @@ import { Workorder, WorkorderInput, WorkorderResponse } from "@/types";
 import { toCamelCase, toSnakeCase } from "@/utils/caseFormatter";
 import { format } from "date-fns";
 
-export const getWorkorders = async  ( type: number, page: number, limit: number, search: string): Promise<WorkorderResponse> => {
+export const getWorkorders = async (type: number, page: number, limit: number, search: string): Promise<WorkorderResponse> => {
   try {
     const response = await api.get<WorkorderResponse>("/workorder", {
       params: {
@@ -12,7 +12,7 @@ export const getWorkorders = async  ( type: number, page: number, limit: number,
         limit,
         search,
       },
-    }); 
+    });
     return toCamelCase(response.data);
   } catch (error) {
     return { data: [], totalPages: 0, currentPage: 0 };
@@ -40,7 +40,7 @@ export const getWorkorderById = async (id: string): Promise<Workorder> => {
 
 export const updateWorkorderStatus = async (id: string, statusId: number) => {
   try {
-    const response = await api.patch(`/workorder/${id}`, {status_id: statusId,});
+    const response = await api.patch(`/workorder/${id}`, { status_id: statusId, });
     return response.data;
   } catch (error) {
     throw new Error("Gagal memperbarui workorder.");
@@ -49,8 +49,8 @@ export const updateWorkorderStatus = async (id: string, statusId: number) => {
 
 export const extendWorkorder = async (workorderId: number, actionId: number, date: string) => {
   try {
-     const waktuMulai = format(new Date(), "yyyy-MM-dd HH:mm:ss");
-     const response = await api.post("/workorder-action", 
+    const waktuMulai = format(new Date(), "yyyy-MM-dd HH:mm:ss");
+    const response = await api.post("/workorder-action",
       { workorder_id: workorderId, action_id: actionId, waktu_mulai: waktuMulai, estimasi_selesai: date }
     );
     return response.data;
@@ -61,10 +61,10 @@ export const extendWorkorder = async (workorderId: number, actionId: number, dat
 
 export const delayWorkorder = async (workorderId: number, actionId: number, reason: string) => {
   try {
-     const waktuMulai = format(new Date(), "yyyy-MM-dd HH:mm:ss");
-    const response = await api.post("/workorder-action",  
+    const waktuMulai = format(new Date(), "yyyy-MM-dd HH:mm:ss");
+    const response = await api.post("/workorder-action",
       { workorder_id: workorderId, action_id: actionId, keterangan: reason, waktu_mulai: waktuMulai }
-   );
+    );
     return response.data;
   } catch (error) {
     throw new Error("Gagal memperbarui workorder.");
@@ -74,8 +74,8 @@ export const delayWorkorder = async (workorderId: number, actionId: number, reas
 export const resumeWorkorder = async (workorderId: number, actionId: number) => {
   try {
     const waktuMulai = format(new Date(), "yyyy-MM-dd HH:mm:ss");
-    const response = await api.post("/workorder-action", 
-      { workorder_id: workorderId, action_id: actionId, waktu_mulai: waktuMulai}
+    const response = await api.post("/workorder-action",
+      { workorder_id: workorderId, action_id: actionId, waktu_mulai: waktuMulai }
     );
     return response.data;
   } catch (error) {

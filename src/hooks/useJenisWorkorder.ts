@@ -9,7 +9,7 @@ interface WorkorderCache {
   };
 }
 
-export const useJenisWorkorder =({
+export const useJenisWorkorder = ({
   currentPage,
   itemsPerPage,
   search,
@@ -22,7 +22,7 @@ export const useJenisWorkorder =({
   sort?: string;
   all?: boolean;
 }) => {
-  const [data, setData] =  useState<JenisWorkorder[]>([]);
+  const [data, setData] = useState<JenisWorkorder[]>([]);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,39 +34,39 @@ export const useJenisWorkorder =({
     fetchData();
   }, [search, currentPage, sort, all]);
 
-  const fetchData = async (forceRefresh = false) => { 
+  const fetchData = async (forceRefresh = false) => {
     if (!forceRefresh && !search && cache[cacheKey]) {
       setData(cache[cacheKey].data);
       setTotalPages(cache[cacheKey].totalPages || 1);
       return;
     }
 
-      setLoading(true);
-      setError(null); 
-      try {
-        const response = await getJenisWorkorders(
-          currentPage,
-          itemsPerPage,
-          search,
-          sort,
-          all,
-        );
-        setData(response.data);
-        setTotalPages(response.totalPages);
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await getJenisWorkorders(
+        currentPage,
+        itemsPerPage,
+        search,
+        sort,
+        all,
+      );
+      setData(response.data);
+      setTotalPages(response.totalPages);
 
-        if (!search) {
-          setCache((prevCache) => ({
-            ...prevCache,
-            [cacheKey]: response,
-          }));
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Gagal mengambil data");
-        console.error("Fetch Error:", err);
-      } finally {
-        setLoading(false);
+      if (!search) {
+        setCache((prevCache) => ({
+          ...prevCache,
+          [cacheKey]: response,
+        }));
       }
-    };
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal mengambil data");
+      console.error("Fetch Error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return { data, totalPages, loading, error, refreshData: fetchData }
 }

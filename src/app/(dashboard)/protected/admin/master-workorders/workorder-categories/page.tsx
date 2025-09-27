@@ -28,13 +28,16 @@ export default async function WorkorderCategoriesPage({
     currentPage: 0,
   };
 
-  if (!modal) {
+  try {
     jenisWorkorderData = await getJenisWorkorders(
       page,
       itemsPerPage,
       search,
       sort
     );
+  } catch (error) {
+    console.error("Failed to fetch jenis workorder data:", error);
+    // Keep default empty data structure
   }
 
   return (

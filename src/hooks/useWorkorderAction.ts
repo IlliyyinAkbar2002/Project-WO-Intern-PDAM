@@ -8,7 +8,7 @@ import { approveLemburSpl, rejectLemburSpl } from '@/services/lemburSplService';
 export function useWorkorderAction(workorderId: string, lemburSplId: string) {
   const router = useRouter();
 
-   const wrapAction = async (actionFn: () => Promise<any>, successMsg: string) => {
+  const wrapAction = async (actionFn: () => Promise<any>, successMsg: string) => {
     try {
       await actionFn();
       toast.success(successMsg);
@@ -18,7 +18,7 @@ export function useWorkorderAction(workorderId: string, lemburSplId: string) {
       toast.error(message);
     }
   };
-  const verifikator = 2; 
+  const verifikator = 2;
   return {
     approve: () => wrapAction(() => approveLemburSpl(lemburSplId, verifikator), 'SPL disetujui'),
     resume: () => wrapAction(() => resumeWorkorder(Number(workorderId), 3,), 'Workorder dilanjutkan'),

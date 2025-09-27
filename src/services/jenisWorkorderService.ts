@@ -15,9 +15,18 @@ export const getJenisWorkorders = async (page?: number, limit?: number, search?:
     if (search) params.search = search;
     if (sort) params.sort = sort;
 
-    const response = await api.get<JenisWorkorderResponse>("/jenis-workorder", { params });
-    return toCamelCase(response.data);
+    const response = await api.get<any>("/jenis-workorder", { params });
+
+    // Convert each item using cleanFormData for consistency
+    const convertedData = response.data.data.map((item: any) => cleanFormData(item));
+
+    return {
+      data: convertedData,
+      totalPages: response.data.totalPages,
+      currentPage: response.data.currentPage,
+    };
   } catch (error) {
+    console.error("Error fetching jenis workorders:", error);
     return { data: [], totalPages: 0, currentPage: 0 };
   }
 };
@@ -34,20 +43,24 @@ export const getJenisWorkorderById = async (id: number): Promise<JenisWorkorder>
 export const createJenisWorkorder = async (data: JenisWorkorder): Promise<JenisWorkorder> => {
   try {
     const formattedData = toSnakeCase(data);
-    const response = await api.post<JenisWorkorder>("/jenis-workorder", formattedData);
-    return response.data;
-  } catch (error) {
-    throw new Error("Gagal menambah jenis workorder.");
+    const response = await api.post<any>("/jenis-workorder", formattedData);
+    return cleanFormData(response.data.data);
+  } catch (error: any) {
+    console.error("Create error:", error);
+    const errorMessage = error.response?.data?.message || error.response?.data?.error || "Gagal menambah jenis workorder.";
+    throw new Error(errorMessage);
   }
 };
 
 export const updateJenisWorkorder = async (id: number, data: JenisWorkorder): Promise<JenisWorkorder> => {
   try {
     const formattedData = toSnakeCase(data);
-    const response = await api.put<JenisWorkorder>(`/jenis-workorder/${id}`, formattedData);
-    return response.data;
-  } catch (error) {
-    throw new Error("Gagal memperbarui jenis workorder.");
+    const response = await api.put<any>(`/jenis-workorder/${id}`, formattedData);
+    return cleanFormData(response.data.data);
+  } catch (error: any) {
+    console.error("Update error:", error);
+    const errorMessage = error.response?.data?.message || error.response?.data?.error || "Gagal memperbarui jenis workorder.";
+    throw new Error(errorMessage);
   }
 };
 
@@ -55,15 +68,17 @@ export const deleteJenisWorkorder = async (id: number): Promise<void> => {
   try {
     await api.delete(`/jenis-workorder/${id}`);
   } catch (error: any) {
+    console.error("Delete error:", error);
     // Enhanced error handling with specific error messages
     if (error.response?.status === 404) {
-      throw new Error("Endpoint delete belum tersedia di backend API. Silakan hubungi developer backend untuk implementasi DELETE /api/jenis-workorder/{id}");
+      throw new Error("Data jenis workorder tidak ditemukan");
     } else if (error.response?.status === 500) {
       throw new Error("Terjadi kesalahan server saat menghapus data");
     } else if (error.response?.status === 403) {
       throw new Error("Anda tidak memiliki izin untuk menghapus data ini");
     } else {
-      throw new Error(`Gagal menghapus jenis workorder: ${error.response?.data?.message || error.message}`);
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || error.message;
+      throw new Error(`Gagal menghapus jenis workorder: ${errorMessage}`);
     }
   }
 };
