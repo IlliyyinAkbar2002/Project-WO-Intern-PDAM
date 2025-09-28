@@ -1,7 +1,51 @@
-import { api } from "@/lib/api";
+import { api, ensureCsrfToken } from "@/lib/api";
 import { JenisWorkorder, JenisWorkorderResponse } from "@/types";
 import { toCamelCase, toSnakeCase } from "@/utils/caseFormatter";
 import { cleanFormData } from "@/utils/cleanFormData";
+
+const sanitizeJenisWorkorderPayload = (data: JenisWorkorder): Record<string, any> => {
+  const payload: Record<string, any> = {
+    ...data,
+    detailForm: (data.detailForm || []).map((detail, detailIndex) => {
+      const sanitizedDetail: Record<string, any> = {
+        ...detail,
+        order: detail.order ?? detailIndex + 1,
+      };
+
+      sanitizedDetail.parent = detail.parent ?? 0;
+
+      if (!detail.id || detail.id <= 0) {
+        delete sanitizedDetail.id;
+      }
+
+      sanitizedDetail.optionForm = (detail.optionForm || [])
+        .filter((option) => option.namaOpsi?.trim())
+        .map((option, optionIndex) => {
+          const sanitizedOption: Record<string, any> = {
+            ...option,
+            order: option.order ?? optionIndex + 1,
+            parent: option.parent ?? 0,
+          };
+
+          if (!option.id || option.id <= 0) {
+            delete sanitizedOption.id;
+          }
+
+          delete sanitizedOption.namaParent;
+
+          return sanitizedOption;
+        });
+
+      return sanitizedDetail;
+    }),
+  };
+
+  if (!data.id || data.id <= 0) {
+    delete payload.id;
+  }
+
+  return payload;
+};
 
 export const getJenisWorkorders = async (page?: number, limit?: number, search?: string, sort?: string, all?: boolean): Promise<JenisWorkorderResponse> => {
   try {
@@ -42,11 +86,29 @@ export const getJenisWorkorderById = async (id: number): Promise<JenisWorkorder>
 
 export const createJenisWorkorder = async (data: JenisWorkorder): Promise<JenisWorkorder> => {
   try {
-    const formattedData = toSnakeCase(data);
+    // Ensure CSRF token is obtained before making the request
+    await ensureCsrfToken();
+
+    const sanitizedData = sanitizeJenisWorkorderPayload(data);
+    const formattedData = toSnakeCase(sanitizedData);
+
+    console.log("Sending data to API:", formattedData);
+
     const response = await api.post<any>("/jenis-workorder", formattedData);
     return cleanFormData(response.data.data);
   } catch (error: any) {
     console.error("Create error:", error);
+    console.error("Error response:", error.response?.data);
+
+    // Better error handling
+    if (error.response?.status === 419) {
+      throw new Error("CSRF token mismatch. Please refresh the page and try again.");
+    } else if (error.response?.status === 422) {
+      const validationErrors = error.response.data.errors;
+      const errorMessages = Object.values(validationErrors).flat().join(", ");
+      throw new Error(`Validation failed: ${errorMessages}`);
+    }
+
     const errorMessage = error.response?.data?.message || error.response?.data?.error || "Gagal menambah jenis workorder.";
     throw new Error(errorMessage);
   }
@@ -54,7 +116,8 @@ export const createJenisWorkorder = async (data: JenisWorkorder): Promise<JenisW
 
 export const updateJenisWorkorder = async (id: number, data: JenisWorkorder): Promise<JenisWorkorder> => {
   try {
-    const formattedData = toSnakeCase(data);
+    const sanitizedData = sanitizeJenisWorkorderPayload(data);
+    const formattedData = toSnakeCase(sanitizedData);
     const response = await api.put<any>(`/jenis-workorder/${id}`, formattedData);
     return cleanFormData(response.data.data);
   } catch (error: any) {
