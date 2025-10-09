@@ -40,12 +40,18 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    console.error('API response error:', {
-      message: error.message,
-      status: error.response?.status,
-      data: error.response?.data,
-      url: error.config?.url
-    });
-    return Promise.reject(error);
-  }
+    // Mendefinisikan detail error dengan nilai fallback
+    const errorDetails = {
+      message: error.message || 'Unknown Error',
+      status: error.response?.status || 'N/A',
+      data: error.response?.data || {}, // Penting: menggunakan {} sebagai fallback
+      url: error.config?.url || 'N/A'
+    };
+    
+    // Mencetak detail yang lebih lengkap
+    console.error('API response error:', errorDetails); 
+    
+    // Mengembalikan Promise.reject(error) agar error diteruskan ke service
+    return Promise.reject(error); 
+  }
 );
