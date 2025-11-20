@@ -3,7 +3,7 @@ import { Action, WorkorderStatus } from "@/types/workorderActionTypes";
 export const getActionsForStatus = (
   status: WorkorderStatus,
   handlers: {
-    approve: () => Promise<void>;
+    // approve: () => Promise<void>;
     resume: () => Promise<void>;
     accept: () => Promise<void>;
     reject: () => Promise<void>;
@@ -15,7 +15,7 @@ export const getActionsForStatus = (
   switch (status) {
     case WorkorderStatus.PENDING:
       return [
-        { label: 'Setujui', onClick: handlers.approve, variant: 'primary', size: 'sm' },
+        { label: 'Setujui', onClick: handlers.accept, variant: 'primary', size: 'sm' },
         { label: 'Tolak', onClick: handlers.reject, variant: 'danger', size: 'sm' },
       ];
     case WorkorderStatus.IN_PROGRESS:
