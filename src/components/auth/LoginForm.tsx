@@ -10,7 +10,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
-import { api, csrf } from "@/lib/api";
+import { api } from "@/lib/api";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -48,7 +48,7 @@ export default function LoginForm() {
     }
 
     try {
-      await csrf();
+      // await csrf();
       await api.post("/login", {
         email,
         password,
