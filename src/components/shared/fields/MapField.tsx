@@ -23,7 +23,11 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow.src,
 });
 
-const containerStyle = { width: "100%", height: "300px", borderRadius: "8px" };
+const baseContainerStyle = {
+  width: "100%",
+  height: "300px",
+  borderRadius: "8px",
+} as const;
 const defaultCenter: LatLngExpression = [-7.265437, 112.754072];
 
 interface MapFieldProps {
@@ -31,6 +35,7 @@ interface MapFieldProps {
   initialPosition?: LatLngExpression;
   showSearch?: boolean;
   radius?: number;
+  height?: number; // px
 }
 
 function MapClickHandler({
@@ -68,6 +73,7 @@ export default function MapField({
   initialPosition = defaultCenter,
   showSearch = false,
   radius = 0,
+  height,
 }: MapFieldProps) {
   const [markerPosition, setMarkerPosition] =
     useState<LatLngExpression>(initialPosition);
@@ -78,8 +84,10 @@ export default function MapField({
 
   useEffect(() => {
     const pos = L.latLng(initialPosition);
-    onLocationSelect(pos.lat, pos.lng);
-  }, []);
+    const nextPos: LatLngExpression = [pos.lat, pos.lng];
+    setMarkerPosition(nextPos);
+    setMapCenter(nextPos);
+  }, [initialPosition]);
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) return;
@@ -137,7 +145,10 @@ export default function MapField({
         center={mapCenter}
         zoom={15}
         scrollWheelZoom
-        style={containerStyle}
+        style={{
+          ...baseContainerStyle,
+          height: `${height ?? 300}px`,
+        }}
       >
         <ChangeMapView center={mapCenter} />
         <TileLayer

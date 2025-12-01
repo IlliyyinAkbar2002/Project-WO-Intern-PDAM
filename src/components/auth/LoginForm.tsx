@@ -10,7 +10,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
-import { api } from "@/lib/api";
+import { api, ensureCsrfToken } from "@/lib/api";
+import Cookies from "js-cookie";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -48,21 +49,76 @@ export default function LoginForm() {
     }
 
     try {
-      // await csrf();
-      await api.post("/login", {
-        email,
-        password,
-      });
-      const { data: user } = await api.get("/me");
+      // memanggil csrf
+      await ensureCsrfToken();
+      //login request
+      const res = await api.post("/v1/auth/login", { email, password });
 
-      if (user.role === "admin") {
-        router.push("/admin");
-      } else if (user.role === "user") {
-        router.push("/user");
+      // Debug: Log the actual response structure
+      console.log("Login response data:", res.data);
+      console.log("Response structure:", {
+        hasAccessToken: !!res.data.access_token,
+        hasToken: !!res.data.token,
+        hasUser: !!res.data.user,
+        userData: res.data.user,
+        userRoleId: res.data.user?.role_id,
+        userRole: res.data.user?.role,
+        fullResponse: res.data,
+      });
+
+      // 2. ambil token & role dari response backend
+      // Try different possible token field names
+      const token = res.data.access_token || res.data.token;
+      const userData = res.data.user || res.data;
+
+      // Try different possible role field names
+      const roleId = userData?.role_id || userData?.role?.id || userData?.role;
+
+      if (!token) {
+        throw new Error(
+          `Token tidak ditemukan di response. Available fields: ${Object.keys(
+            res.data
+          ).join(", ")}`
+        );
+      }
+
+      if (!roleId) {
+        throw new Error(
+          `Role tidak ditemukan di response. User data: ${JSON.stringify(
+            userData
+          )}`
+        );
+      }
+
+      // 3. simpan ke cookie agar bisa diakses di server component
+      Cookies.set("token", token, { expires: 1 }); // 1 hari
+      Cookies.set("role", roleId.toString() || "", { expires: 7 });
+
+      // 4. set header default axios (optional, kalau mau auto-auth setelah login)
+      // api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+      // 5. ambil data user (karena token sudah tersimpan, otomatis keikut di header Authorization)
+      // const me = await api.get("/me");
+      // const user = me.data;
+
+      // 6. redirect sesuai role
+      const numericRoleId =
+        typeof roleId === "string" ? parseInt(roleId) : roleId;
+      if (numericRoleId === 1) {
+        router.push("/protected/admin");
+      } else if (numericRoleId === 2 || numericRoleId === 3) {
+        router.push("/protected/user");
       } else {
         setError("Role tidak dikenali");
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err.response) {
+        console.error("Login error response:", err.response.data);
+      } else if (err.request) {
+        console.error("Login error request:", err.request);
+      } else {
+        console.error("Login error message:", err.message);
+      }
       setError("Login gagal. Periksa email dan password.");
     } finally {
       setIsLoading(false);
