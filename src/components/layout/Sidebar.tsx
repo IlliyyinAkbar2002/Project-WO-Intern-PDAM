@@ -51,7 +51,7 @@ const menuItems: Record<"admin" | "user", MenuItem[]> = {
       subMenu: [
         {
           label: "Data Pegawai",
-          href: `${baseAdminPath}/master-pegawai`,
+          href: `${baseAdminPath}/master-pegawai/employee-data`,
         },
         { label: "Monitoring", href: "/admin/master-formulir/monitoring" },
       ],

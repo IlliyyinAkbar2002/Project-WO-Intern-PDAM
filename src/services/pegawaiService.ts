@@ -1,5 +1,5 @@
 import { api } from "@/lib/api";
-import { Pegawai } from "@/types/pegawaiTypes";
+import { PegawaiResponse } from "@/types/pegawaiTypes";
 
 // Fungsi untuk mengambil semua data pegawai
 export const getPegawai = async (
@@ -9,14 +9,24 @@ export const getPegawai = async (
   sort: string,
   departemenId?: number,
   jabatanId?: number
-): Promise<Pegawai[]> => {
+): Promise<PegawaiResponse> => {
   try {
-    const params: any = {};
+    const params: any = {
+      page,
+      per_page: itemsPerPage,
+      search,
+      sort,
+    };
     if (departemenId) params.departemen_id = departemenId;
     if (jabatanId) params.jabatan_id = jabatanId;
 
     const response = await api.get("/v1/pegawai", { params });
-    return response.data.data as Pegawai[];
+    
+    return {
+      data: response.data.data,
+      totalPages: response.data.totalPages ?? 1,
+      currentPage: response.data.currentPage ?? page,
+    };
   } catch (error: any) {
     console.error("getPegawai error:", error);
     throw new Error("Gagal mengambil data pegawai.");
