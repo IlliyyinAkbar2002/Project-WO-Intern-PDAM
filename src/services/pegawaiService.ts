@@ -21,11 +21,11 @@ export const getPegawai = async (
     if (jabatanId) params.jabatan_id = jabatanId;
 
     const response = await api.get("/v1/pegawai", { params });
-    
+
     return {
       data: response.data.data,
-      totalPages: response.data.totalPages ?? 1,
-      currentPage: response.data.currentPage ?? page,
+      totalPages: response.data.last_page ?? 1,
+      currentPage: response.data.current_page ?? page,
     };
   } catch (error: any) {
     console.error("getPegawai error:", error);

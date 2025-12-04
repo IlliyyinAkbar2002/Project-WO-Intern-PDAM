@@ -62,7 +62,7 @@ export function MainTable<TData, TValue>({
       <TableBody>
         {loading ? (
           <TableRow>
-            <TableCell colSpan={columns.length} className="bg-white">
+            <TableCell colSpan={columns.length} className="bg-transparent">
               <div className="flex flex-col items-center justify-center">
                 <Lottie animationData={loadingAnimation} className="w-32" />
                 <p className="text-lg text-gray-600 pb-5">Memuat data...</p>
@@ -73,7 +73,10 @@ export function MainTable<TData, TValue>({
           table.getRowModel().rows.map((row) => (
             <TableRow key={row.id}>
               {row.getVisibleCells().map((cell) => (
-                <TableCell key={cell.id} className="bg-white text-center">
+                <TableCell
+                  key={cell.id}
+                  className="bg-transparent text-center px-4 py-2"
+                >
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </TableCell>
               ))}
@@ -84,7 +87,7 @@ export function MainTable<TData, TValue>({
           ))
         ) : (
           <TableRow>
-            <TableCell colSpan={columns.length} className="bg-white">
+            <TableCell colSpan={columns.length} className="bg-transparent">
               <div className="flex flex-col items-center justify-center">
                 <Lottie animationData={notFoundAnimation} className="w-32" />
                 <p className="text-lg text-gray-600 pb-5">Data tidak ada</p>

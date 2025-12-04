@@ -13,7 +13,7 @@ export default function EmployeeDataPage() {
   const page = isNaN(rawPage) || rawPage < 1 ? 1 : rawPage;
   const search = searchParams.get("search") || "";
   const sort = searchParams.get("sort") || "desc";
-  const itemsPerPage = 5;
+  const itemsPerPage = 10;
 
   const [pegawaiData, setPegawaiData] = useState<PegawaiResponse>({
     data: [],

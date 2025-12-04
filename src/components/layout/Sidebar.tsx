@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   ClockCounterClockwiseIcon,
+  HammerIcon,
+  HardHatIcon,
   MapPinAreaIcon,
   PersonIcon,
   PersonSimpleIcon,
@@ -64,6 +66,18 @@ const menuItems: Record<"admin" | "user", MenuItem[]> = {
           label: "Jenis Workorder",
           href: `${baseAdminPath}/master-workorders/workorder-categories`,
         },
+        {
+          label: "Status Workorder",
+          href: `${baseAdminPath}/master-workorders/workorder-categories`,
+        },
+        {
+          label: "History Workorder",
+          href: `${baseAdminPath}/master-workorders/workorder-categories`,
+        },
+        {
+          label: "Parameter Workorder",
+          href: `${baseAdminPath}/master-workorders/workorder-categories`,
+        },
       ],
     },
     {
@@ -72,6 +86,16 @@ const menuItems: Record<"admin" | "user", MenuItem[]> = {
       subMenu: [
         {
           label: "Radius Lokasi",
+          href: `${baseAdminPath}/master-locations/location-radius`,
+        },
+      ],
+    },
+    {
+      title: "Master Material",
+      icon: <HammerIcon size={24} className="text-primary-500" />,
+      subMenu: [
+        {
+          label: "Jenis Material",
           href: `${baseAdminPath}/master-locations/location-radius`,
         },
       ],
