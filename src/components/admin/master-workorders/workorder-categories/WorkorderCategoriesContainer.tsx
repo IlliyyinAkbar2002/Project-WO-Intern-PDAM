@@ -14,7 +14,7 @@ import { sortOptions } from "@/constants/options";
 import { columns } from "./columns";
 import MasterFormModal from "./modals/master-form-modal/MasterFormModal";
 import ConfirmModal from "@/components/shared/modals/ConfirmModal";
-import { useJenisWorkorderStore } from "@/store/useJenisWorkorderStore";
+import { useJenisWorkorderStore } from "@/components/admin/master-workorders/workorder-categories/useJenisWorkorderStore";
 import { JenisWorkorder } from "@/types";
 
 interface WorkorderCategoriesContainerProps {

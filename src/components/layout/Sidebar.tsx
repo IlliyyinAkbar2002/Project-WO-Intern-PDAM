@@ -67,7 +67,7 @@ const menuItems: Record<"admin" | "user", MenuItem[]> = {
           href: `${baseAdminPath}/master-workorders/workorder-categories`,
         },
         {
-          label: "Status Workorder",
+          label: "List Workorder",
           href: `${baseAdminPath}/master-workorders/workorder-categories`,
         },
         {

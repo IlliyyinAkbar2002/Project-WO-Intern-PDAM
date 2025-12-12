@@ -8,6 +8,7 @@ export interface OptionForm  {
 
 export interface DetailForm  {
   id: number;
+  jenisWorkorderId: number;
   namaField: string;
   tipeField: string;
   tipeData: string | null;
@@ -27,6 +28,13 @@ export interface JenisWorkorder  {
   nama: string;
   kpiId: number;
   detailForm: DetailForm[];
+}
+
+export interface JenisWorkorderPayload {
+  id?: number;
+  nama: string;
+  kpiId: number;
+  detailForm?: DetailForm[];
 }
 
 export interface JenisWorkorderResponse  {

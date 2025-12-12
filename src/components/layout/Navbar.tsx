@@ -46,8 +46,6 @@ import { BellIcon, UserIcon, SignOutIcon } from "@phosphor-icons/react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
-import { confirmDialog } from "@/utils/confirmDialog";
 
 interface NavbarProps {
   role: "admin" | "user";
@@ -56,25 +54,6 @@ interface NavbarProps {
 
 export default function Navbar({ role, roleName }: NavbarProps) {
   const router = useRouter();
-
-  const handleLogout = async () => {
-    // Pop up sweet alert
-    const ok = await confirmDialog(
-      "Yakin logout?",
-      "Kamu harus login lagi setelah ini.",
-      "Logout",
-      "Batal"
-    );
-
-    if (ok) {
-      // hapus token
-      Cookies.remove("token");
-      // reset role
-      Cookies.remove("role");
-      // redirect ke login
-      router.push("/login");
-    }
-  };
 
   return (
     <div className="flex h-full w-full justify-between items-center bg-standardWhite border-b-2 border-grey-300 text-primary-500 py-4 px-12">
@@ -96,22 +75,14 @@ export default function Navbar({ role, roleName }: NavbarProps) {
         <span className="font-semibold text-primary-500 capitalize">
           {role === "admin" ? "super admin" : "User"}
         </span>
-        
+
         <Link href="#profile" className="cursor-pointer">
-          <UserIcon size={24} />
+          <UserIcon size={26} />
         </Link>
         <div>Profile</div>
 
-        {/* Tambahan Button Logout */}
-        <button
-          onClick={handleLogout}
-          className="text-red-500 hover:text-red-600 font-medium"
-        >
-          Logout
-        </button>
-
         <div>
-          <BellIcon size={24} />
+          <BellIcon size={26} />
         </div>
       </div>
     </div>

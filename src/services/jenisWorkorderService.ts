@@ -1,53 +1,11 @@
 import { api, ensureCsrfToken } from "@/lib/api";
-import { JenisWorkorder, JenisWorkorderResponse } from "@/types";
-import { toCamelCase, toSnakeCase } from "@/utils/caseFormatter";
-import { cleanFormData } from "@/utils/cleanFormData";
-
-const sanitizeJenisWorkorderPayload = (
-  data: JenisWorkorder
-): Record<string, any> => {
-  const payload: Record<string, any> = {
-    ...data,
-    detailForm: (data.detailForm || []).map((detail, detailIndex) => {
-      const sanitizedDetail: Record<string, any> = {
-        ...detail,
-        order: detail.order ?? detailIndex + 1,
-      };
-
-      sanitizedDetail.parent = detail.parent ?? 0;
-
-      if (!detail.id || detail.id <= 0) {
-        delete sanitizedDetail.id;
-      }
-
-      sanitizedDetail.optionForm = (detail.optionForm || [])
-        .filter((option) => option.namaOpsi?.trim())
-        .map((option, optionIndex) => {
-          const sanitizedOption: Record<string, any> = {
-            ...option,
-            order: option.order ?? optionIndex + 1,
-            parent: option.parent ?? 0,
-          };
-
-          if (!option.id || option.id <= 0) {
-            delete sanitizedOption.id;
-          }
-
-          delete sanitizedOption.namaParent;
-
-          return sanitizedOption;
-        });
-
-      return sanitizedDetail;
-    }),
-  };
-
-  if (!data.id || data.id <= 0) {
-    delete payload.id;
-  }
-
-  return payload;
-};
+import {
+  JenisWorkorder,
+  JenisWorkorderPayload,
+  JenisWorkorderResponse,
+} from "@/types";
+import { toSnakeCase } from "@/utils/caseFormatter";
+import { cleanJenisWorkorder } from "@/utils/cleanFormData";
 
 export const getJenisWorkorders = async (
   page?: number,
@@ -68,10 +26,8 @@ export const getJenisWorkorders = async (
     if (sort) params.sort = sort;
 
     const response = await api.get<any>("/v1/jenis-workorder", { params });
-
-    // Convert each item using cleanFormData for consistency
     const convertedData = response.data.data.map((item: any) =>
-      cleanFormData(item)
+      cleanJenisWorkorder(item)
     );
 
     return {
@@ -90,68 +46,54 @@ export const getJenisWorkorderById = async (
 ): Promise<JenisWorkorder> => {
   try {
     const response = await api.get<JenisWorkorder>(`/v1/jenis-workorder/${id}`);
-    return cleanFormData(response.data);
-  } catch (error) {
+    return cleanJenisWorkorder(response.data);
+  } catch {
     throw new Error(`Gagal mengambil jenis workorder dengan ID ${id}.`);
   }
 };
 
+// ✅ Revisi: gunakan JenisWorkorderPayload, bukan JenisWorkorder penuh
 export const createJenisWorkorder = async (
-  data: JenisWorkorder
+  data: JenisWorkorderPayload
 ): Promise<JenisWorkorder> => {
   try {
-    // Ensure CSRF token is obtained before making the request
     await ensureCsrfToken();
-
-    const sanitizedData = sanitizeJenisWorkorderPayload(data);
-    const formattedData = toSnakeCase(sanitizedData);
-
-    console.log("Sending data to API:", formattedData);
-
+    const formattedData = toSnakeCase(data);
     const response = await api.post<any>("/v1/jenis-workorder", formattedData);
-    return cleanFormData(response.data.data);
+    return cleanJenisWorkorder(response.data.data);
   } catch (error: any) {
     console.error("Create error:", error);
-    console.error("Error response:", error.response?.data);
-
-    // Better error handling
-    if (error.response?.status === 419) {
-      throw new Error(
-        "CSRF token mismatch. Please refresh the page and try again."
-      );
-    } else if (error.response?.status === 422) {
+    if (error.response?.status === 422) {
       const validationErrors = error.response.data.errors;
       const errorMessages = Object.values(validationErrors).flat().join(", ");
       throw new Error(`Validation failed: ${errorMessages}`);
     }
-
-    const errorMessage =
+    throw new Error(
       error.response?.data?.message ||
-      error.response?.data?.error ||
-      "Gagal menambah jenis workorder.";
-    throw new Error(errorMessage);
+        error.response?.data?.error ||
+        "Gagal menambah jenis workorder."
+    );
   }
 };
 
 export const updateJenisWorkorder = async (
   id: number,
-  data: JenisWorkorder
+  data: JenisWorkorderPayload
 ): Promise<JenisWorkorder> => {
   try {
-    const sanitizedData = sanitizeJenisWorkorderPayload(data);
-    const formattedData = toSnakeCase(sanitizedData);
+    const formattedData = toSnakeCase(data);
     const response = await api.put<any>(
       `/v1/jenis-workorder/${id}`,
       formattedData
     );
-    return cleanFormData(response.data.data);
+    return cleanJenisWorkorder(response.data.data);
   } catch (error: any) {
     console.error("Update error:", error);
-    const errorMessage =
+    throw new Error(
       error.response?.data?.message ||
-      error.response?.data?.error ||
-      "Gagal memperbarui jenis workorder.";
-    throw new Error(errorMessage);
+        error.response?.data?.error ||
+        "Gagal memperbarui jenis workorder."
+    );
   }
 };
 
@@ -160,19 +102,10 @@ export const deleteJenisWorkorder = async (id: number): Promise<void> => {
     await api.delete(`/v1/jenis-workorder/${id}`);
   } catch (error: any) {
     console.error("Delete error:", error);
-    // Enhanced error handling with specific error messages
-    if (error.response?.status === 404) {
-      throw new Error("Data jenis workorder tidak ditemukan");
-    } else if (error.response?.status === 500) {
-      throw new Error("Terjadi kesalahan server saat menghapus data");
-    } else if (error.response?.status === 403) {
-      throw new Error("Anda tidak memiliki izin untuk menghapus data ini");
-    } else {
-      const errorMessage =
-        error.response?.data?.message ||
+    throw new Error(
+      error.response?.data?.message ||
         error.response?.data?.error ||
-        error.message;
-      throw new Error(`Gagal menghapus jenis workorder: ${errorMessage}`);
-    }
+        "Gagal menghapus jenis workorder."
+    );
   }
 };
