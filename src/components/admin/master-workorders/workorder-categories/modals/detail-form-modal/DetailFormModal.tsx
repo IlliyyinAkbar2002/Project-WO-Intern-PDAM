@@ -1,9 +1,5 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import {
-  createDetailForm,
-  updateDetailForm as updateDetailFormAPI,
-} from "@/services/detailFormService";
 import { useJenisWorkorderStore } from "@/components/admin/master-workorders/workorder-categories/useJenisWorkorderStore";
 import { XIcon } from "@phosphor-icons/react";
 import { Input } from "@/components/ui/input";
@@ -108,9 +104,9 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
   const parentOptionOptions =
     parentOptionField && parentOptionField.optionForm.length > 0
       ? parentOptionField.optionForm.map((item) => ({
-          value: String(item.id),
-          label: item.namaOpsi,
-        }))
+        value: String(item.id),
+        label: item.namaOpsi,
+      }))
       : [{ label: "Tanpa Parent", value: "0" }];
 
   // Tambah baris opsi baru (local state)
@@ -227,30 +223,18 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
     if (!isValid) return;
 
     const cleanedForm = prepareDetailForm(detailForm, options);
-    // Catatan: prepareDetailForm harus menyiapkan payload sesuai schema BE (snake_case).
-
+    // Catatan:
+    // - Untuk master yang belum tersimpan (id=0), updateDetailFormStore akan menyimpan secara lokal.
+    // - Untuk master & detail yang sudah tersimpan (id>0), updateDetailFormStore akan memanggil API update.
     try {
-      if (detailForm.id > 0) {
-        // Update di backend
-        const updated = await updateDetailFormAPI(
-          formData.id,
-          detailForm.id,
-          cleanedForm
-        );
-        // Sinkronkan state lokal di store
-        updateDetailFormStore(formData.id, detailForm.id, updated);
-        toast.success("Data berhasil diperbarui!");
-      } else {
-        // Create di backend
-        const created = await createDetailForm(formData.id, cleanedForm);
-        // Sinkronkan state lokal di store
-        updateDetailFormStore(formData.id, created.id, created);
-        toast.success("Data berhasil ditambahkan!");
-      }
+      await updateDetailFormStore(formData.id, detailForm.id, cleanedForm);
+      toast.success("Data berhasil disimpan!");
       onClose();
     } catch (error) {
       console.error(error);
-      toast.error("Gagal menyimpan data!");
+      const message =
+        error instanceof Error ? error.message : "Gagal menyimpan data!";
+      toast.error(message);
     }
   };
 

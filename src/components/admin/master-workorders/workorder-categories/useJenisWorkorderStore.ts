@@ -46,7 +46,7 @@ interface JenisWorkorderState {
   addDetailForm: (
     jenisWorkorderId: number,
     detail?: Partial<DetailForm>
-  ) => Promise<void>;
+  ) => Promise<DetailForm>;
   updateDetailForm: (
     jenisWorkorderId: number,
     id: number,
@@ -110,8 +110,161 @@ export const useJenisWorkorderStore = create<JenisWorkorderState>(
         nama: data.nama ?? current.nama ?? "",
         kpiId: data.kpiId ?? current.kpiId ?? 0,
       };
+      const localDetailsSnapshot = [...(current.detailForm ?? [])];
+
+      // 1) Create master first
       const jw = await apiCreateJenisWorkorder(payload);
-      set({ formData: jw });
+
+      // 2) Keep local detail rows (temp) while persisting them
+      set((state) => ({
+        formData: {
+          ...state.formData,
+          ...jw,
+          id: jw.id,
+          nama: jw.nama,
+          kpiId: jw.kpiId,
+          detailForm: localDetailsSnapshot.map((df) => ({
+            ...df,
+            jenisWorkorderId: jw.id,
+          })),
+        },
+      }));
+
+      // No local details to sync
+      if (localDetailsSnapshot.length === 0) {
+        set({ formData: jw });
+        return;
+      }
+
+      const localDetails = localDetailsSnapshot
+        .filter((df) => df.id <= 0)
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+      // Nothing to persist (unlikely) -> just ensure master is set
+      if (localDetails.length === 0) {
+        set((state) => ({
+          formData: { ...state.formData, ...jw, id: jw.id, nama: jw.nama, kpiId: jw.kpiId },
+        }));
+        return;
+      }
+
+      const isCompleteDetail = (df: DetailForm): boolean => {
+        if (!df.namaField?.trim()) return false;
+        if (!df.tipeField) return false;
+        if (
+          !df.tipeData &&
+          df.tipeField !== "dropdown" &&
+          df.tipeField !== "image" &&
+          df.tipeField !== "date"
+        ) {
+          return false;
+        }
+        if (!df.sifat) return false;
+        // hintText is required by backend
+        if (df.hintText === undefined || df.hintText === null) return false;
+        if (df.tipeField === "dropdown" && df.parent === null) return false;
+        if (
+          df.tipeField === "dropdown" &&
+          !(df.optionForm || []).every((opt) => (opt.namaOpsi || "").trim() !== "")
+        ) {
+          return false;
+        }
+        return true;
+      };
+
+      // Filter only complete details that can be synced to backend
+      const completeDetails = localDetails.filter((df) => isCompleteDetail(df));
+
+      // If no complete details, just set master and return
+      if (completeDetails.length === 0) {
+        set((state) => ({
+          formData: { ...state.formData, ...jw, id: jw.id, nama: jw.nama, kpiId: jw.kpiId },
+        }));
+        return;
+      }
+
+      const detailIdMap = new Map<number, number>(); // localDetailId -> serverDetailId
+      const localOptionIdToOrderByDetailId = new Map<number, Map<number, number>>();
+      for (const df of completeDetails) {
+        const optionMap = new Map<number, number>();
+        for (const opt of df.optionForm || []) {
+          optionMap.set(opt.id, opt.order);
+        }
+        localOptionIdToOrderByDetailId.set(df.id, optionMap);
+      }
+
+      const serverOptionIdByOrderByDetailServerId = new Map<number, Map<number, number>>();
+
+      // Create complete details with all required fields
+      for (const df of completeDetails) {
+        // Map parent detail ID if it references a local (negative) ID
+        const mappedParentDetailId =
+          typeof df.parent === "number" && df.parent < 0
+            ? detailIdMap.get(df.parent) ?? 0
+            : df.parent;
+
+        const parentFieldLocalId = typeof df.parent === "number" ? df.parent : null;
+        const parentFieldServerId =
+          typeof parentFieldLocalId === "number" && parentFieldLocalId < 0
+            ? detailIdMap.get(parentFieldLocalId)
+            : parentFieldLocalId;
+
+        const optionForm = (df.optionForm || []).map((opt) => {
+          let mappedOptParent = opt.parent;
+
+          // If option parent references a local option id (negative), remap via option.order
+          if (
+            typeof mappedOptParent === "number" &&
+            mappedOptParent < 0 &&
+            typeof parentFieldLocalId === "number" &&
+            typeof parentFieldServerId === "number"
+          ) {
+            const localIdToOrder = localOptionIdToOrderByDetailId.get(parentFieldLocalId);
+            const parentOrder = localIdToOrder?.get(mappedOptParent);
+            const serverOrderToId =
+              serverOptionIdByOrderByDetailServerId.get(parentFieldServerId);
+            const newParentId =
+              parentOrder != null ? serverOrderToId?.get(parentOrder) : undefined;
+            mappedOptParent = newParentId ?? 0;
+          }
+
+          return {
+            ...opt,
+            id: undefined,
+            parent: mappedOptParent,
+          };
+        });
+
+        const createPayload: any = {
+          ...df,
+          jenisWorkorderId: jw.id,
+          parent: mappedParentDetailId,
+          optionForm,
+        };
+        // Remove local temp ID before sending
+        delete createPayload.id;
+
+        const created = await createDetailForm(jw.id, createPayload as DetailForm);
+
+        detailIdMap.set(df.id, created.id);
+
+        // Update local state with server response
+        set((state) => ({
+          formData: {
+            ...state.formData,
+            detailForm: state.formData.detailForm.map((item) =>
+              item.id === df.id ? created : item
+            ),
+          },
+        }));
+
+        // Track option IDs for parent mapping
+        const orderMap = new Map<number, number>();
+        for (const opt of created.optionForm || []) {
+          orderMap.set(opt.order, opt.id);
+        }
+        serverOptionIdByOrderByDetailServerId.set(created.id, orderMap);
+      }
     },
 
     updateJenisWorkorder: async (id: number, data: Partial<JenisWorkorder>) => {
@@ -157,7 +310,7 @@ export const useJenisWorkorderStore = create<JenisWorkorderState>(
             detailForm: [...state.formData.detailForm, newDetail],
           },
         }));
-        return;
+        return newDetail;
       }
 
       // Otherwise create a local temporary detail (unsaved)
@@ -185,6 +338,7 @@ export const useJenisWorkorderStore = create<JenisWorkorderState>(
           detailForm: [...state.formData.detailForm, localDetail],
         },
       }));
+      return localDetail;
     },
 
     updateDetailForm: async (
@@ -332,11 +486,11 @@ export const useJenisWorkorderStore = create<JenisWorkorderState>(
             detailForm: state.formData.detailForm.map((df) =>
               df.id === detailFormId
                 ? {
-                    ...df,
-                    optionForm: df.optionForm.map((opt) =>
-                      opt.id === id ? updated : opt
-                    ),
-                  }
+                  ...df,
+                  optionForm: df.optionForm.map((opt) =>
+                    opt.id === id ? updated : opt
+                  ),
+                }
                 : df
             ),
           },
@@ -351,11 +505,11 @@ export const useJenisWorkorderStore = create<JenisWorkorderState>(
           detailForm: state.formData.detailForm.map((df) =>
             df.id === detailFormId
               ? {
-                  ...df,
-                  optionForm: (df.optionForm || []).map((opt) =>
-                    opt.id === id ? { ...opt, ...option } : opt
-                  ),
-                }
+                ...df,
+                optionForm: (df.optionForm || []).map((opt) =>
+                  opt.id === id ? { ...opt, ...option } : opt
+                ),
+              }
               : df
           ),
         },
@@ -376,9 +530,9 @@ export const useJenisWorkorderStore = create<JenisWorkorderState>(
             detailForm: state.formData.detailForm.map((df) =>
               df.id === detailFormId
                 ? {
-                    ...df,
-                    optionForm: df.optionForm.filter((opt) => opt.id !== id),
-                  }
+                  ...df,
+                  optionForm: df.optionForm.filter((opt) => opt.id !== id),
+                }
                 : df
             ),
           },
@@ -393,11 +547,11 @@ export const useJenisWorkorderStore = create<JenisWorkorderState>(
           detailForm: state.formData.detailForm.map((df) =>
             df.id === detailFormId
               ? {
-                  ...df,
-                  optionForm: (df.optionForm || []).filter(
-                    (opt) => opt.id !== id
-                  ),
-                }
+                ...df,
+                optionForm: (df.optionForm || []).filter(
+                  (opt) => opt.id !== id
+                ),
+              }
               : df
           ),
         },

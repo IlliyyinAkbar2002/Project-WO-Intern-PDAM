@@ -10,9 +10,15 @@ export const getDetailForms = async (
     const response = await api.get<any>(
       `/v1/jenis-workorder/${jenisWorkorderId}/detail-form`
     );
-    return response.data.map((item: any) => cleanDetailForm(item));
-  } catch {
-    throw new Error("Gagal mengambil detail form.");
+    const items = response.data?.data ?? response.data;
+    return (items || []).map((item: any) => cleanDetailForm(item));
+  } catch (error: any) {
+    console.error("Error fetching detail forms:", error);
+    throw new Error(
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      "Gagal mengambil detail form."
+    );
   }
 };
 
@@ -24,9 +30,15 @@ export const getDetailFormById = async (
     const response = await api.get<any>(
       `/v1/jenis-workorder/${jenisWorkorderId}/detail-form/${id}`
     );
-    return cleanDetailForm(response.data);
-  } catch {
-    throw new Error("Gagal mengambil detail form.");
+    const raw = response.data?.data ?? response.data;
+    return cleanDetailForm(raw);
+  } catch (error: any) {
+    console.error("Error fetching detail form by id:", error);
+    throw new Error(
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      "Gagal mengambil detail form."
+    );
   }
 };
 
@@ -41,9 +53,22 @@ export const createDetailForm = async (
       `/v1/jenis-workorder/${jenisWorkorderId}/detail-form`,
       formattedData
     );
-    return cleanDetailForm(response.data.data);
-  } catch {
-    throw new Error("Gagal menambah detail form.");
+    const raw = response.data?.data ?? response.data;
+    return cleanDetailForm(raw);
+  } catch (error: any) {
+    console.error("Create detail form error:", error);
+    if (error.response?.status === 422) {
+      const validationErrors = error.response.data?.errors;
+      if (validationErrors) {
+        const errorMessages = Object.values(validationErrors).flat().join(", ");
+        throw new Error(`Validation failed: ${errorMessages}`);
+      }
+    }
+    throw new Error(
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      "Gagal menambah detail form."
+    );
   }
 };
 
@@ -58,9 +83,22 @@ export const updateDetailForm = async (
       `/v1/jenis-workorder/${jenisWorkorderId}/detail-form/${id}`,
       formattedData
     );
-    return cleanDetailForm(response.data.data);
-  } catch {
-    throw new Error("Gagal memperbarui detail form.");
+    const raw = response.data?.data ?? response.data;
+    return cleanDetailForm(raw);
+  } catch (error: any) {
+    console.error("Update detail form error:", error);
+    if (error.response?.status === 422) {
+      const validationErrors = error.response.data?.errors;
+      if (validationErrors) {
+        const errorMessages = Object.values(validationErrors).flat().join(", ");
+        throw new Error(`Validation failed: ${errorMessages}`);
+      }
+    }
+    throw new Error(
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      "Gagal memperbarui detail form."
+    );
   }
 };
 
@@ -72,7 +110,12 @@ export const deleteDetailForm = async (
     await api.delete(
       `/v1/jenis-workorder/${jenisWorkorderId}/detail-form/${id}`
     );
-  } catch {
-    throw new Error("Gagal menghapus detail form.");
+  } catch (error: any) {
+    console.error("Delete detail form error:", error);
+    throw new Error(
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      "Gagal menghapus detail form."
+    );
   }
 };
