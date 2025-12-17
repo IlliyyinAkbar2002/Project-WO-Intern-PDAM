@@ -9,6 +9,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useJenisWorkorderStore } from "../../useJenisWorkorderStore";
 import { FormWorkorder } from "@/types/jenisWorkorderTypes";
 import { useKpi } from "@/hooks/useKpi";
+import { useJenisWorkorderOptions } from "@/hooks/useJenisWorkorderOptions";
 import DetailFormModal from "../detail-form-modal/DetailFormModal";
 import { toast } from "sonner";
 import PreviewFormModal from "../PreviewFormModal";
@@ -90,6 +91,16 @@ export default function MasterFormModal({
     label: item.nama,
   }));
 
+  // Jenis Workorder dropdown options
+  const jenisWorkorderData = useJenisWorkorderOptions();
+  const jenisWorkorderOptions = jenisWorkorderData.data.map((item) => ({
+    value: String(item.id),
+    label: item.nama,
+  }));
+
+  // Toggle untuk manual entry jenis workorder
+  const [isManualEntry, setIsManualEntry] = useState(false);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAddRow = () => {
@@ -114,7 +125,6 @@ export default function MasterFormModal({
         namaField: "",
         tipeField: "",
         tipeData: "",
-        unitSatuan: null,
         sifat: "",
         min: null,
         max: null,
@@ -202,14 +212,58 @@ export default function MasterFormModal({
         <div className="p-6 space-y-4">
           <div className="rounded-lg border-2 p-4 bg-grey-100 space-y-2">
             <h3 className="text-2xl font-semibold">Form Work Order</h3>
-            <div className="grid grid-cols-3 gap-8">
-              <Input
-                label="Jenis Work Order"
-                placeholder="Isi jenis workorder..."
-                value={formData.nama}
-                onChange={(e) => setFormData({ nama: e.target.value })}
-                disabled={mode}
-              />
+            <div className="grid grid-cols-2 gap-8">
+              <div className="flex items-end gap-2">
+                {isManualEntry ? (
+                  <div className="flex-1">
+                    <Input
+                      label="Jenis Work Order"
+                      placeholder="Isi jenis workorder..."
+                      value={formData.nama}
+                      onChange={(e) => setFormData({ nama: e.target.value })}
+                      disabled={mode}
+                    />
+                  </div>
+                ) : (
+                  <div className="flex-1">
+                    <SingleSelect
+                      label="Jenis Work Order"
+                      placeholder="Pilih jenis work order..."
+                      options={jenisWorkorderOptions}
+                      value={jenisWorkorderOptions.find((opt) => opt.label === formData.nama) || null}
+                      onChange={(val) => setFormData({ nama: val.label })}
+                      isDisabled={mode}
+                    />
+                  </div>
+                )}
+                <label
+                  className="flex items-center justify-center w-10 h-10 mb-1 border-2 rounded cursor-pointer transition-colors"
+                  style={{
+                    borderColor: isManualEntry ? '#1E4DB7' : '#d1d5db',
+                    backgroundColor: isManualEntry ? '#1E4DB7' : 'white',
+                  }}
+                  title={isManualEntry ? "Mode manual entry aktif" : "Klik untuk manual entry"}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isManualEntry}
+                    onChange={(e) => {
+                      setIsManualEntry(e.target.checked);
+                      if (e.target.checked) {
+                        // Reset nama when switching to manual entry
+                        setFormData({ nama: "" });
+                      }
+                    }}
+                    disabled={mode}
+                    className="sr-only"
+                  />
+                  {isManualEntry && (
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </label>
+              </div>
               <SingleSelect
                 label="KPI (Rencana Tindakan)"
                 placeholder="Pilih KPI"

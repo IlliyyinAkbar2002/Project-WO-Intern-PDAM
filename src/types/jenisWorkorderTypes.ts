@@ -15,7 +15,6 @@ export interface FormWorkorder {
   namaField: string;
   tipeField: string;
   tipeData: string | null;
-  unitSatuan: string | null;
   sifat: string;
   min: number | null;
   max: number | null;

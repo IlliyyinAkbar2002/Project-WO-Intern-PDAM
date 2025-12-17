@@ -59,7 +59,6 @@ export default function PreviewFormModal({ onClose }: PreviewFormModalProps) {
                         label={field.namaField}
                         placeholder={field.hintText || `Isi ${field.namaField}`}
                         type={field.tipeData ?? ""}
-                        unit={field.unitSatuan}
                         min={field.min ?? undefined}
                         max={field.max ?? undefined}
                         required={field.sifat === "mandatory"}
@@ -98,7 +97,6 @@ export default function PreviewFormModal({ onClose }: PreviewFormModalProps) {
                           handleSelectChange(field.id, Number(selected.value))
                         }
                         options={options}
-                        unit={field.unitSatuan}
                         required={field.sifat === "mandatory"}
                       />
                       {field.hintText && (

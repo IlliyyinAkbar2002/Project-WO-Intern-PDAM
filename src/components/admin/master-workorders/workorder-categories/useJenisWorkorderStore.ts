@@ -325,7 +325,6 @@ export const useJenisWorkorderStore = create<JenisWorkorderState>(
         namaField: form?.namaField ?? "",
         tipeField: form?.tipeField ?? "",
         tipeData: form?.tipeData ?? "",
-        unitSatuan: form?.unitSatuan ?? null,
         sifat: form?.sifat ?? "",
         min: form?.min ?? null,
         max: form?.max ?? null,

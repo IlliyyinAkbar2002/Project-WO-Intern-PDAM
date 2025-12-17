@@ -45,7 +45,7 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
     ...(formData?.formWorkorder
       ?.filter(
         (item) =>
-          item.id !== Number(submodalId) && item.tipeField === "dropdown"
+          item.id !== Number(submodalId) && item.tipeField === "dropdown",
       )
       .map((item) => ({
         value: String(item.id),
@@ -60,7 +60,6 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
     namaField: "",
     tipeField: "",
     tipeData: "",
-    unitSatuan: null,
     sifat: "",
     min: null,
     max: null,
@@ -90,14 +89,14 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
   };
 
   const parentOptionField = formData.formWorkorder.find(
-    (form) => form.id === formWorkorder.parent
+    (form) => form.id === formWorkorder.parent,
   );
 
   const parentOptionOptions = parentOptionField
     ? parentOptionField.detailForm.map((item) => ({
-      value: String(item.id),
-      label: item.namaOpsi,
-    }))
+        value: String(item.id),
+        label: item.namaOpsi,
+      }))
     : [{ label: "Tanpa Parent", value: "0" }];
 
   const handleAddRow = () => {
@@ -128,13 +127,13 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
         prev.map((opt) =>
           opt.id === option.id
             ? {
-              ...opt,
-              id: option.id,
-              namaOpsi: option.namaOpsi,
-              parent: option.parent,
-            }
-            : opt
-        )
+                ...opt,
+                id: option.id,
+                namaOpsi: option.namaOpsi,
+                parent: option.parent,
+              }
+            : opt,
+        ),
       );
       if (editRowId) {
         toast.success("Data berhasil diperbarui!");
@@ -157,10 +156,16 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
     if (submodalId) {
       const numericId = Number(submodalId);
       const existingForm = formData.formWorkorder.find(
-        (item) => item.id === numericId
+        (item) => item.id === numericId,
       );
       if (existingForm) {
-        setFormWorkorder(existingForm);
+        // Jika kpiId belum diset (0), gunakan kpiId dari parent form
+        const kpiIdToUse =
+          existingForm.kpiId > 0 ? existingForm.kpiId : formData.kpiId;
+        setFormWorkorder({
+          ...existingForm,
+          kpiId: kpiIdToUse,
+        });
         setOptions(existingForm.detailForm);
         if (existingForm.detailForm.length === 0) {
           setOptions((prev) => [
@@ -175,7 +180,7 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
   //get parrent name atau parent label
   const modifiedOptions = options.map((option) => {
     const parentOption = parentOptionOptions.find(
-      (parent) => parent.value === String(option.parent)
+      (parent) => parent.value === String(option.parent),
     );
     return {
       ...option,
@@ -206,8 +211,8 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
     if (isSingleRow && hasValue) {
       setOptions((prev) =>
         prev.map((opt) =>
-          opt.id === id ? { ...opt, namaOpsi: "", parent: null } : opt
-        )
+          opt.id === id ? { ...opt, namaOpsi: "", parent: null } : opt,
+        ),
       );
       toast.success("Data berhasil dihapus!");
     } else if (!isSingleRow) {
@@ -225,7 +230,7 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
   const handleInputRow = (
     id: number,
     field: keyof DetailForm,
-    value: string | number | null
+    value: string | number | null,
   ) => {
     setOption((prev) => ({ ...prev, id: id, [field]: value }));
   };
@@ -260,19 +265,14 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
         </div>
         <div className="grid grid-cols-3 gap-x-8 gap-y-3">
           <Input label="Jenis Work Order" value={formData.nama} disabled />
-          <SingleSelect
+          <Input
             label="KPI (Rencana Tindakan)"
-            placeholder="Pilih KPI"
             value={
               kpiOptions.find(
-                (item) => item.value === String(formWorkorder.kpiId)
-              ) || null
+                (item) => item.value === String(formWorkorder.kpiId),
+              )?.label || ""
             }
-            onChange={(selected) =>
-              setFormWorkorder({ ...formWorkorder, kpiId: Number(selected?.value) })
-            }
-            options={kpiOptions}
-            isDisabled={mode}
+            disabled
             required
           />
           <Input
@@ -290,7 +290,7 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
             placeholder="Pilih Tipe Field"
             value={
               tipeFieldOptions.find(
-                (item) => item.value === String(formWorkorder.tipeField)
+                (item) => item.value === String(formWorkorder.tipeField),
               ) || null
             }
             onChange={(selected) =>
@@ -305,7 +305,7 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
             placeholder="Pilih Tipe Data"
             value={
               tipeDataOptions.find(
-                (item) => item.value === String(formWorkorder.tipeData)
+                (item) => item.value === String(formWorkorder.tipeData),
               ) || null
             }
             onChange={(selected) =>
@@ -315,21 +315,12 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
             isDisabled={mode || disabledFields.includes("tipeData")}
             required
           />
-          <Input
-            label="Satuan Unit"
-            placeholder="cm/m/pcs"
-            value={formWorkorder.unitSatuan || ""}
-            onChange={(e) =>
-              setFormWorkorder({ ...formWorkorder, unitSatuan: e.target.value })
-            }
-            disabled={mode || disabledFields.includes("unitSatuan")}
-          />
           <SingleSelect
             label="Sifat"
             placeholder="Pilih Sifat"
             value={
               sifatOptions.find(
-                (item) => item.value === String(formWorkorder.sifat)
+                (item) => item.value === String(formWorkorder.sifat),
               ) || null
             }
             onChange={(selected) =>
@@ -346,7 +337,10 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
               min={0}
               value={formWorkorder.min || 0}
               onChange={(e) =>
-                setFormWorkorder({ ...formWorkorder, min: Number(e.target.value) })
+                setFormWorkorder({
+                  ...formWorkorder,
+                  min: Number(e.target.value),
+                })
               }
               disabled={mode || disabledFields.includes("min")}
             />
@@ -356,7 +350,10 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
               min={0}
               value={formWorkorder.max || 0}
               onChange={(e) =>
-                setFormWorkorder({ ...formWorkorder, max: Number(e.target.value) })
+                setFormWorkorder({
+                  ...formWorkorder,
+                  max: Number(e.target.value),
+                })
               }
               disabled={mode || disabledFields.includes("max")}
             />
@@ -366,11 +363,14 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
             placeholder="Pilih Parent Field"
             value={
               parentOptions.find(
-                (item) => item.value === String(formWorkorder.parent)
+                (item) => item.value === String(formWorkorder.parent),
               ) || null
             }
             onChange={(selected) =>
-              setFormWorkorder({ ...formWorkorder, parent: Number(selected?.value) })
+              setFormWorkorder({
+                ...formWorkorder,
+                parent: Number(selected?.value),
+              })
             }
             options={parentOptions}
             isDisabled={mode || disabledFields.includes("parent")}

@@ -1,11 +1,18 @@
 import { JenisWorkorder, FormWorkorder, DetailForm } from "@/types";
 
 export function cleanJenisWorkorder(raw: any): JenisWorkorder {
+  const formWorkorders = (raw.form_workorder || []).map((fw: any) =>
+    cleanFormWorkorder(fw),
+  );
+
+  // kpiId di root level, fallback ke kpi_id dari formWorkorder pertama jika tidak ada di root
+  const kpiId = raw.kpi_id ?? raw.kpiId ?? formWorkorders[0]?.kpiId ?? 0;
+
   return {
     id: raw.id,
     nama: raw.nama,
-    kpiId: raw.kpi_id, // kpiId di root level
-    formWorkorder: (raw.form_workorder || []).map((fw: any) => cleanFormWorkorder(fw)),
+    kpiId: kpiId,
+    formWorkorder: formWorkorders,
   };
 }
 
@@ -14,11 +21,10 @@ export function cleanFormWorkorder(raw: any): FormWorkorder {
   return {
     id: raw.id,
     jenisWorkorderId: raw.jenis_workorder_id,
-    kpiId: raw.kpi_id, // kpi_id sekarang di sini
+    kpiId: raw.kpi_id ?? raw.kpiId ?? 0, // kpi_id sekarang di sini, dengan fallback
     namaField: raw.nama_field,
     tipeField: raw.tipe_field,
     tipeData: raw.tipe_data,
-    unitSatuan: raw.unit_satuan,
     sifat: raw.sifat,
     min: raw.min,
     max: raw.max,

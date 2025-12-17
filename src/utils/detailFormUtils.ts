@@ -9,9 +9,9 @@ export const getDisabledFields = (tipeField: string): string[] => {
     case "dropdown":
       return ["tipeData", "min", "max"];
     case "image":
-      return ["tipeData", "unitSatuan", "min", "max", "parent"];
+      return ["tipeData", "min", "max", "parent"];
     case "date":
-      return ["tipeData", "unitSatuan", "min", "max", "parent"];
+      return ["tipeData", "min", "max", "parent"];
     default:
       return [];
   }
@@ -49,7 +49,6 @@ export const prepareDetailForm = (formWorkorder: FormWorkorder, options: DetailF
       break;
     case "image":
       cleaned.tipeData = null;
-      cleaned.unitSatuan = null;
       cleaned.min = null;
       cleaned.max = null;
       cleaned.parent = 0;
@@ -58,7 +57,6 @@ export const prepareDetailForm = (formWorkorder: FormWorkorder, options: DetailF
       break;
     case "date":
       cleaned.tipeData = null;
-      cleaned.unitSatuan = null;
       cleaned.min = null;
       cleaned.max = null;
       cleaned.parent = 0;
