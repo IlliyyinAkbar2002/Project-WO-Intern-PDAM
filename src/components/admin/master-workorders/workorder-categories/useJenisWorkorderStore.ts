@@ -4,8 +4,8 @@ import { create } from "zustand";
 import {
   JenisWorkorder,
   JenisWorkorderPayload,
+  FormWorkorder,
   DetailForm,
-  OptionForm,
 } from "@/types/jenisWorkorderTypes";
 import {
   getJenisWorkorderById,
@@ -14,16 +14,16 @@ import {
   deleteJenisWorkorder as apiDeleteJenisWorkorder,
 } from "@/services/jenisWorkorderService";
 import {
+  getFormWorkorders,
+  createFormWorkorder,
+  updateFormWorkorder,
+  deleteFormWorkorder,
+} from "@/services/formWorkorderService";
+import {
   getDetailForms,
   createDetailForm,
   updateDetailForm,
   deleteDetailForm,
-} from "@/services/detailFormService";
-import {
-  getOptionForms,
-  createOptionForm,
-  updateOptionForm,
-  deleteOptionForm,
 } from "@/services/optionFormService";
 
 interface JenisWorkorderState {
@@ -41,38 +41,38 @@ interface JenisWorkorderState {
   ) => Promise<void>;
   deleteJenisWorkorder: (id: number) => Promise<void>;
 
-  // Detail form
-  fetchDetailForms: (jenisWorkorderId: number) => Promise<void>;
+  // Form workorder (dulunya detail form)
+  fetchFormWorkorders: (jenisWorkorderId: number) => Promise<void>;
+  addFormWorkorder: (
+    jenisWorkorderId: number,
+    form?: Partial<FormWorkorder>
+  ) => Promise<FormWorkorder>;
+  updateFormWorkorder: (
+    jenisWorkorderId: number,
+    id: number,
+    form: FormWorkorder
+  ) => Promise<void>;
+  removeFormWorkorder: (jenisWorkorderId: number, id: number) => Promise<void>;
+
+  // Detail form (dulunya option form - untuk opsi dropdown)
+  fetchDetailForms: (
+    jenisWorkorderId: number,
+    formWorkorderId: number
+  ) => Promise<void>;
   addDetailForm: (
     jenisWorkorderId: number,
-    detail?: Partial<DetailForm>
-  ) => Promise<DetailForm>;
+    formWorkorderId: number,
+    detail: DetailForm
+  ) => Promise<void>;
   updateDetailForm: (
     jenisWorkorderId: number,
+    formWorkorderId: number,
     id: number,
     detail: DetailForm
   ) => Promise<void>;
-  removeDetailForm: (jenisWorkorderId: number, id: number) => Promise<void>;
-
-  // Option form
-  fetchOptionForms: (
+  removeDetailForm: (
     jenisWorkorderId: number,
-    detailFormId: number
-  ) => Promise<void>;
-  addOptionForm: (
-    jenisWorkorderId: number,
-    detailFormId: number,
-    option: OptionForm
-  ) => Promise<void>;
-  updateOptionForm: (
-    jenisWorkorderId: number,
-    detailFormId: number,
-    id: number,
-    option: OptionForm
-  ) => Promise<void>;
-  removeOptionForm: (
-    jenisWorkorderId: number,
-    detailFormId: number,
+    formWorkorderId: number,
     id: number
   ) => Promise<void>;
 }
@@ -82,8 +82,7 @@ export const useJenisWorkorderStore = create<JenisWorkorderState>(
     formData: {
       id: 0,
       nama: "",
-      kpiId: 0,
-      detailForm: [],
+      formWorkorder: [], // kpiId dihapus dari root, sekarang di setiap formWorkorder
     },
 
     setFormData: (data) =>
@@ -95,7 +94,7 @@ export const useJenisWorkorderStore = create<JenisWorkorderState>(
 
     resetForm: () =>
       set({
-        formData: { id: 0, nama: "", kpiId: 0, detailForm: [] },
+        formData: { id: 0, nama: "", formWorkorder: [] },
       }),
 
     // Master
@@ -108,162 +107,163 @@ export const useJenisWorkorderStore = create<JenisWorkorderState>(
       const current = get().formData;
       const payload: JenisWorkorderPayload = {
         nama: data.nama ?? current.nama ?? "",
-        kpiId: data.kpiId ?? current.kpiId ?? 0,
+        formWorkorder: current.formWorkorder ?? [],
+        // kpiId dihapus dari root - sekarang di setiap formWorkorder
       };
-      const localDetailsSnapshot = [...(current.detailForm ?? [])];
+      const localFormWorkordersSnapshot = [...(current.formWorkorder ?? [])];
 
       // 1) Create master first
       const jw = await apiCreateJenisWorkorder(payload);
 
-      // 2) Keep local detail rows (temp) while persisting them
+      // 2) Keep local form workorder rows (temp) while persisting them
       set((state) => ({
         formData: {
           ...state.formData,
           ...jw,
           id: jw.id,
           nama: jw.nama,
-          kpiId: jw.kpiId,
-          detailForm: localDetailsSnapshot.map((df) => ({
-            ...df,
+          formWorkorder: localFormWorkordersSnapshot.map((fw) => ({
+            ...fw,
             jenisWorkorderId: jw.id,
           })),
         },
       }));
 
-      // No local details to sync
-      if (localDetailsSnapshot.length === 0) {
+      // No local form workorders to sync
+      if (localFormWorkordersSnapshot.length === 0) {
         set({ formData: jw });
         return;
       }
 
-      const localDetails = localDetailsSnapshot
-        .filter((df) => df.id <= 0)
+      const localFormWorkorders = localFormWorkordersSnapshot
+        .filter((fw) => fw.id <= 0)
         .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
       // Nothing to persist (unlikely) -> just ensure master is set
-      if (localDetails.length === 0) {
+      if (localFormWorkorders.length === 0) {
         set((state) => ({
-          formData: { ...state.formData, ...jw, id: jw.id, nama: jw.nama, kpiId: jw.kpiId },
+          formData: { ...state.formData, ...jw, id: jw.id, nama: jw.nama },
         }));
         return;
       }
 
-      const isCompleteDetail = (df: DetailForm): boolean => {
-        if (!df.namaField?.trim()) return false;
-        if (!df.tipeField) return false;
+      const isCompleteFormWorkorder = (fw: FormWorkorder): boolean => {
+        if (!fw.namaField?.trim()) return false;
+        if (!fw.tipeField) return false;
+        if (!fw.kpiId || fw.kpiId <= 0) return false; // kpiId wajib di setiap formWorkorder
         if (
-          !df.tipeData &&
-          df.tipeField !== "dropdown" &&
-          df.tipeField !== "image" &&
-          df.tipeField !== "date"
+          !fw.tipeData &&
+          fw.tipeField !== "dropdown" &&
+          fw.tipeField !== "image" &&
+          fw.tipeField !== "date"
         ) {
           return false;
         }
-        if (!df.sifat) return false;
+        if (!fw.sifat) return false;
         // hintText is required by backend
-        if (df.hintText === undefined || df.hintText === null) return false;
-        if (df.tipeField === "dropdown" && df.parent === null) return false;
+        if (fw.hintText === undefined || fw.hintText === null) return false;
+        if (fw.tipeField === "dropdown" && fw.parent === null) return false;
         if (
-          df.tipeField === "dropdown" &&
-          !(df.optionForm || []).every((opt) => (opt.namaOpsi || "").trim() !== "")
+          fw.tipeField === "dropdown" &&
+          !(fw.detailForm || []).every((df) => (df.namaOpsi || "").trim() !== "")
         ) {
           return false;
         }
         return true;
       };
 
-      // Filter only complete details that can be synced to backend
-      const completeDetails = localDetails.filter((df) => isCompleteDetail(df));
+      // Filter only complete form workorders that can be synced to backend
+      const completeFormWorkorders = localFormWorkorders.filter((fw) => isCompleteFormWorkorder(fw));
 
-      // If no complete details, just set master and return
-      if (completeDetails.length === 0) {
+      // If no complete form workorders, just set master and return
+      if (completeFormWorkorders.length === 0) {
         set((state) => ({
-          formData: { ...state.formData, ...jw, id: jw.id, nama: jw.nama, kpiId: jw.kpiId },
+          formData: { ...state.formData, ...jw, id: jw.id, nama: jw.nama },
         }));
         return;
       }
 
-      const detailIdMap = new Map<number, number>(); // localDetailId -> serverDetailId
-      const localOptionIdToOrderByDetailId = new Map<number, Map<number, number>>();
-      for (const df of completeDetails) {
-        const optionMap = new Map<number, number>();
-        for (const opt of df.optionForm || []) {
-          optionMap.set(opt.id, opt.order);
+      const formWorkorderIdMap = new Map<number, number>(); // localFormWorkorderId -> serverFormWorkorderId
+      const localDetailFormIdToOrderByFormWorkorderId = new Map<number, Map<number, number>>();
+      for (const fw of completeFormWorkorders) {
+        const detailFormMap = new Map<number, number>();
+        for (const df of fw.detailForm || []) {
+          detailFormMap.set(df.id, df.order);
         }
-        localOptionIdToOrderByDetailId.set(df.id, optionMap);
+        localDetailFormIdToOrderByFormWorkorderId.set(fw.id, detailFormMap);
       }
 
-      const serverOptionIdByOrderByDetailServerId = new Map<number, Map<number, number>>();
+      const serverDetailFormIdByOrderByFormWorkorderServerId = new Map<number, Map<number, number>>();
 
-      // Create complete details with all required fields
-      for (const df of completeDetails) {
-        // Map parent detail ID if it references a local (negative) ID
-        const mappedParentDetailId =
-          typeof df.parent === "number" && df.parent < 0
-            ? detailIdMap.get(df.parent) ?? 0
-            : df.parent;
+      // Create complete form workorders with all required fields
+      for (const fw of completeFormWorkorders) {
+        // Map parent form workorder ID if it references a local (negative) ID
+        const mappedParentFormWorkorderId =
+          typeof fw.parent === "number" && fw.parent < 0
+            ? formWorkorderIdMap.get(fw.parent) ?? 0
+            : fw.parent;
 
-        const parentFieldLocalId = typeof df.parent === "number" ? df.parent : null;
+        const parentFieldLocalId = typeof fw.parent === "number" ? fw.parent : null;
         const parentFieldServerId =
           typeof parentFieldLocalId === "number" && parentFieldLocalId < 0
-            ? detailIdMap.get(parentFieldLocalId)
+            ? formWorkorderIdMap.get(parentFieldLocalId)
             : parentFieldLocalId;
 
-        const optionForm = (df.optionForm || []).map((opt) => {
-          let mappedOptParent = opt.parent;
+        const detailForm = (fw.detailForm || []).map((df) => {
+          let mappedDfParent = df.parent;
 
-          // If option parent references a local option id (negative), remap via option.order
+          // If detail form parent references a local detail form id (negative), remap via detailForm.order
           if (
-            typeof mappedOptParent === "number" &&
-            mappedOptParent < 0 &&
+            typeof mappedDfParent === "number" &&
+            mappedDfParent < 0 &&
             typeof parentFieldLocalId === "number" &&
             typeof parentFieldServerId === "number"
           ) {
-            const localIdToOrder = localOptionIdToOrderByDetailId.get(parentFieldLocalId);
-            const parentOrder = localIdToOrder?.get(mappedOptParent);
+            const localIdToOrder = localDetailFormIdToOrderByFormWorkorderId.get(parentFieldLocalId);
+            const parentOrder = localIdToOrder?.get(mappedDfParent);
             const serverOrderToId =
-              serverOptionIdByOrderByDetailServerId.get(parentFieldServerId);
+              serverDetailFormIdByOrderByFormWorkorderServerId.get(parentFieldServerId);
             const newParentId =
               parentOrder != null ? serverOrderToId?.get(parentOrder) : undefined;
-            mappedOptParent = newParentId ?? 0;
+            mappedDfParent = newParentId ?? 0;
           }
 
           return {
-            ...opt,
+            ...df,
             id: undefined,
-            parent: mappedOptParent,
+            parent: mappedDfParent,
           };
         });
 
         const createPayload: any = {
-          ...df,
+          ...fw,
           jenisWorkorderId: jw.id,
-          parent: mappedParentDetailId,
-          optionForm,
+          parent: mappedParentFormWorkorderId,
+          detailForm,
         };
         // Remove local temp ID before sending
         delete createPayload.id;
 
-        const created = await createDetailForm(jw.id, createPayload as DetailForm);
+        const created = await createFormWorkorder(jw.id, createPayload as FormWorkorder);
 
-        detailIdMap.set(df.id, created.id);
+        formWorkorderIdMap.set(fw.id, created.id);
 
         // Update local state with server response
         set((state) => ({
           formData: {
             ...state.formData,
-            detailForm: state.formData.detailForm.map((item) =>
-              item.id === df.id ? created : item
+            formWorkorder: state.formData.formWorkorder.map((item) =>
+              item.id === fw.id ? created : item
             ),
           },
         }));
 
-        // Track option IDs for parent mapping
+        // Track detail form IDs for parent mapping
         const orderMap = new Map<number, number>();
-        for (const opt of created.optionForm || []) {
-          orderMap.set(opt.order, opt.id);
+        for (const df of created.detailForm || []) {
+          orderMap.set(df.order, df.id);
         }
-        serverOptionIdByOrderByDetailServerId.set(created.id, orderMap);
+        serverDetailFormIdByOrderByFormWorkorderServerId.set(created.id, orderMap);
       }
     },
 
@@ -272,7 +272,8 @@ export const useJenisWorkorderStore = create<JenisWorkorderState>(
       const payload: JenisWorkorderPayload = {
         id,
         nama: data.nama ?? current.nama ?? "",
-        kpiId: data.kpiId ?? current.kpiId ?? 0,
+        formWorkorder: data.formWorkorder ?? current.formWorkorder ?? [],
+        // kpiId dihapus dari root - sekarang di setiap formWorkorder
       };
       const jw = await apiUpdateJenisWorkorder(id, payload);
       set({ formData: jw });
@@ -281,104 +282,105 @@ export const useJenisWorkorderStore = create<JenisWorkorderState>(
     deleteJenisWorkorder: async (id: number) => {
       await apiDeleteJenisWorkorder(id);
       set({
-        formData: { id: 0, nama: "", kpiId: 0, detailForm: [] },
+        formData: { id: 0, nama: "", formWorkorder: [] },
       });
     },
 
-    // Detail form
-    fetchDetailForms: async (jenisWorkorderId: number) => {
+    // Form workorder (dulunya detail form)
+    fetchFormWorkorders: async (jenisWorkorderId: number) => {
       if (!jenisWorkorderId || jenisWorkorderId <= 0) return;
-      const details = await getDetailForms(jenisWorkorderId);
+      const formWorkorders = await getFormWorkorders(jenisWorkorderId);
       set((state) => ({
-        formData: { ...state.formData, detailForm: details },
+        formData: { ...state.formData, formWorkorder: formWorkorders },
       }));
     },
 
-    addDetailForm: async (
+    addFormWorkorder: async (
       jenisWorkorderId: number,
-      detail?: Partial<DetailForm>
+      form?: Partial<FormWorkorder>
     ) => {
       // If jenisWorkorderId is present (persisted), create on server.
       if (jenisWorkorderId && jenisWorkorderId > 0) {
-        const newDetail = await createDetailForm(
+        const newForm = await createFormWorkorder(
           jenisWorkorderId,
-          detail as DetailForm
+          form as FormWorkorder
         );
         set((state) => ({
           formData: {
             ...state.formData,
-            detailForm: [...state.formData.detailForm, newDetail],
+            formWorkorder: [...state.formData.formWorkorder, newForm],
           },
         }));
-        return newDetail;
+        return newForm;
       }
 
-      // Otherwise create a local temporary detail (unsaved)
+      // Otherwise create a local temporary form workorder (unsaved)
       const tempId = -Date.now();
       const current = get();
-      const localDetail: DetailForm = {
+      const localFormWorkorder: FormWorkorder = {
         id: tempId,
         jenisWorkorderId: jenisWorkorderId,
-        namaField: detail?.namaField ?? "",
-        tipeField: detail?.tipeField ?? "",
-        tipeData: detail?.tipeData ?? "",
-        unitSatuan: detail?.unitSatuan ?? null,
-        sifat: detail?.sifat ?? "",
-        min: detail?.min ?? null,
-        max: detail?.max ?? null,
-        parent: detail?.parent ?? null,
-        keterangan: detail?.keterangan ?? null,
-        hintText: detail?.hintText ?? "",
-        order: detail?.order ?? (current.formData.detailForm?.length ?? 0) + 1,
-        optionForm: detail?.optionForm ?? [],
+        kpiId: form?.kpiId ?? 0, // kpiId sekarang di sini
+        namaField: form?.namaField ?? "",
+        tipeField: form?.tipeField ?? "",
+        tipeData: form?.tipeData ?? "",
+        unitSatuan: form?.unitSatuan ?? null,
+        sifat: form?.sifat ?? "",
+        min: form?.min ?? null,
+        max: form?.max ?? null,
+        parent: form?.parent ?? null,
+        keterangan: form?.keterangan ?? null,
+        hintText: form?.hintText ?? "",
+        order: form?.order ?? (current.formData.formWorkorder?.length ?? 0) + 1,
+        detailForm: form?.detailForm ?? [],
       };
       set((state) => ({
         formData: {
           ...state.formData,
-          detailForm: [...state.formData.detailForm, localDetail],
+          formWorkorder: [...state.formData.formWorkorder, localFormWorkorder],
         },
       }));
-      return localDetail;
+      return localFormWorkorder;
     },
 
-    updateDetailForm: async (
+    updateFormWorkorder: async (
       jenisWorkorderId: number,
       id: number,
-      detail: DetailForm
+      form: FormWorkorder
     ) => {
-      // Persisted detail -> call API
+      // Persisted form workorder -> call API
       if (id > 0 && jenisWorkorderId && jenisWorkorderId > 0) {
-        const updated = await updateDetailForm(jenisWorkorderId, id, detail);
+        const updated = await updateFormWorkorder(jenisWorkorderId, id, form);
         set((state) => ({
           formData: {
             ...state.formData,
-            detailForm: state.formData.detailForm.map((df) =>
-              df.id === id ? updated : df
+            formWorkorder: state.formData.formWorkorder.map((fw) =>
+              fw.id === id ? updated : fw
             ),
           },
         }));
         return;
       }
 
-      // Local-only detail -> update locally
+      // Local-only form workorder -> update locally
       set((state) => ({
         formData: {
           ...state.formData,
-          detailForm: state.formData.detailForm.map((df) =>
-            df.id === id ? { ...df, ...detail } : df
+          formWorkorder: state.formData.formWorkorder.map((fw) =>
+            fw.id === id ? { ...fw, ...form } : fw
           ),
         },
       }));
     },
 
-    removeDetailForm: async (jenisWorkorderId: number, id: number) => {
+    removeFormWorkorder: async (jenisWorkorderId: number, id: number) => {
       // If persisted on server
       if (id > 0 && jenisWorkorderId && jenisWorkorderId > 0) {
-        await deleteDetailForm(jenisWorkorderId, id);
+        await deleteFormWorkorder(jenisWorkorderId, id);
         set((state) => ({
           formData: {
             ...state.formData,
-            detailForm: state.formData.detailForm.filter((df) => df.id !== id),
+            formWorkorder: state.formData.formWorkorder.filter((fw) => fw.id !== id),
           },
         }));
         return;
@@ -388,110 +390,110 @@ export const useJenisWorkorderStore = create<JenisWorkorderState>(
       set((state) => ({
         formData: {
           ...state.formData,
-          detailForm: state.formData.detailForm.filter((df) => df.id !== id),
+          formWorkorder: state.formData.formWorkorder.filter((fw) => fw.id !== id),
         },
       }));
     },
 
-    // Option form
-    fetchOptionForms: async (
+    // Detail form (dulunya option form - untuk opsi dropdown)
+    fetchDetailForms: async (
       jenisWorkorderId: number,
-      detailFormId: number
+      formWorkorderId: number
     ) => {
-      if (!jenisWorkorderId || jenisWorkorderId <= 0 || !detailFormId) return;
-      const options = await getOptionForms(jenisWorkorderId, detailFormId);
+      if (!jenisWorkorderId || jenisWorkorderId <= 0 || !formWorkorderId) return;
+      const detailForms = await getDetailForms(jenisWorkorderId, formWorkorderId);
       set((state) => ({
         formData: {
           ...state.formData,
-          detailForm: state.formData.detailForm.map((df) =>
-            df.id === detailFormId ? { ...df, optionForm: options } : df
+          formWorkorder: state.formData.formWorkorder.map((fw) =>
+            fw.id === formWorkorderId ? { ...fw, detailForm: detailForms } : fw
           ),
         },
       }));
     },
 
-    addOptionForm: async (
+    addDetailForm: async (
       jenisWorkorderId: number,
-      detailFormId: number,
-      option: OptionForm
+      formWorkorderId: number,
+      detail: DetailForm
     ) => {
-      // Persisted detail -> call API
+      // Persisted form workorder -> call API
       if (
         jenisWorkorderId &&
         jenisWorkorderId > 0 &&
-        detailFormId &&
-        detailFormId > 0
+        formWorkorderId &&
+        formWorkorderId > 0
       ) {
-        const newOption = await createOptionForm(
+        const newDetail = await createDetailForm(
           jenisWorkorderId,
-          detailFormId,
-          option
+          formWorkorderId,
+          detail
         );
         set((state) => ({
           formData: {
             ...state.formData,
-            detailForm: state.formData.detailForm.map((df) =>
-              df.id === detailFormId
-                ? { ...df, optionForm: [...df.optionForm, newOption] }
-                : df
+            formWorkorder: state.formData.formWorkorder.map((fw) =>
+              fw.id === formWorkorderId
+                ? { ...fw, detailForm: [...fw.detailForm, newDetail] }
+                : fw
             ),
           },
         }));
         return;
       }
 
-      // Local-only option -> add locally with temp id
+      // Local-only detail -> add locally with temp id
       const tempId = -Date.now();
-      const localOption: OptionForm = {
+      const localDetail: DetailForm = {
         id: tempId,
-        namaOpsi: option.namaOpsi ?? "",
-        parent: option.parent ?? null,
-        order: option.order ?? 0,
+        namaOpsi: detail.namaOpsi ?? "",
+        parent: detail.parent ?? null,
+        order: detail.order ?? 0,
       };
       set((state) => ({
         formData: {
           ...state.formData,
-          detailForm: state.formData.detailForm.map((df) =>
-            df.id === detailFormId
-              ? { ...df, optionForm: [...(df.optionForm || []), localOption] }
-              : df
+          formWorkorder: state.formData.formWorkorder.map((fw) =>
+            fw.id === formWorkorderId
+              ? { ...fw, detailForm: [...(fw.detailForm || []), localDetail] }
+              : fw
           ),
         },
       }));
     },
 
-    updateOptionForm: async (
+    updateDetailForm: async (
       jenisWorkorderId: number,
-      detailFormId: number,
+      formWorkorderId: number,
       id: number,
-      option: OptionForm
+      detail: DetailForm
     ) => {
       // Persisted -> call API
       if (
         id > 0 &&
         jenisWorkorderId &&
         jenisWorkorderId > 0 &&
-        detailFormId &&
-        detailFormId > 0
+        formWorkorderId &&
+        formWorkorderId > 0
       ) {
-        const updated = await updateOptionForm(
+        const updated = await updateDetailForm(
           jenisWorkorderId,
-          detailFormId,
+          formWorkorderId,
           id,
-          option
+          detail
         );
         set((state) => ({
           formData: {
             ...state.formData,
-            detailForm: state.formData.detailForm.map((df) =>
-              df.id === detailFormId
+            formWorkorder: state.formData.formWorkorder.map((fw) =>
+              fw.id === formWorkorderId
                 ? {
-                  ...df,
-                  optionForm: df.optionForm.map((opt) =>
-                    opt.id === id ? updated : opt
+                  ...fw,
+                  detailForm: fw.detailForm.map((df) =>
+                    df.id === id ? updated : df
                   ),
                 }
-                : df
+                : fw
             ),
           },
         }));
@@ -502,38 +504,38 @@ export const useJenisWorkorderStore = create<JenisWorkorderState>(
       set((state) => ({
         formData: {
           ...state.formData,
-          detailForm: state.formData.detailForm.map((df) =>
-            df.id === detailFormId
+          formWorkorder: state.formData.formWorkorder.map((fw) =>
+            fw.id === formWorkorderId
               ? {
-                ...df,
-                optionForm: (df.optionForm || []).map((opt) =>
-                  opt.id === id ? { ...opt, ...option } : opt
+                ...fw,
+                detailForm: (fw.detailForm || []).map((df) =>
+                  df.id === id ? { ...df, ...detail } : df
                 ),
               }
-              : df
+              : fw
           ),
         },
       }));
     },
 
-    removeOptionForm: async (
+    removeDetailForm: async (
       jenisWorkorderId: number,
-      detailFormId: number,
+      formWorkorderId: number,
       id: number
     ) => {
       // Persisted -> delete on server
       if (id > 0 && jenisWorkorderId && jenisWorkorderId > 0) {
-        await deleteOptionForm(jenisWorkorderId, detailFormId, id);
+        await deleteDetailForm(jenisWorkorderId, formWorkorderId, id);
         set((state) => ({
           formData: {
             ...state.formData,
-            detailForm: state.formData.detailForm.map((df) =>
-              df.id === detailFormId
+            formWorkorder: state.formData.formWorkorder.map((fw) =>
+              fw.id === formWorkorderId
                 ? {
-                  ...df,
-                  optionForm: df.optionForm.filter((opt) => opt.id !== id),
+                  ...fw,
+                  detailForm: fw.detailForm.filter((df) => df.id !== id),
                 }
-                : df
+                : fw
             ),
           },
         }));
@@ -544,15 +546,15 @@ export const useJenisWorkorderStore = create<JenisWorkorderState>(
       set((state) => ({
         formData: {
           ...state.formData,
-          detailForm: state.formData.detailForm.map((df) =>
-            df.id === detailFormId
+          formWorkorder: state.formData.formWorkorder.map((fw) =>
+            fw.id === formWorkorderId
               ? {
-                ...df,
-                optionForm: (df.optionForm || []).filter(
-                  (opt) => opt.id !== id
+                ...fw,
+                detailForm: (fw.detailForm || []).filter(
+                  (df) => df.id !== id
                 ),
               }
-              : df
+              : fw
           ),
         },
       }));

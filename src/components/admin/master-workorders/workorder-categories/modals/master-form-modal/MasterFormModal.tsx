@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { FileMagnifyingGlassIcon, XIcon } from "@phosphor-icons/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useJenisWorkorderStore } from "../../useJenisWorkorderStore";
-import { DetailForm } from "@/types/jenisWorkorderTypes";
+import { FormWorkorder } from "@/types/jenisWorkorderTypes";
 import { useKpi } from "@/hooks/useKpi";
 import DetailFormModal from "../detail-form-modal/DetailFormModal";
 import { toast } from "sonner";
@@ -53,14 +53,14 @@ export default function MasterFormModal({
     formData,
     setFormData,
     setAllFormData,
-    addDetailForm,
-    updateDetailForm,
-    removeDetailForm,
+    addFormWorkorder,
+    updateFormWorkorder,
+    removeFormWorkorder,
   } = useJenisWorkorderStore();
 
-  // Handler untuk update order detailForm (drag-and-drop)
-  const updateDetailFormOrder = (newOrder: DetailForm[]) => {
-    setFormData({ detailForm: newOrder });
+  // Handler untuk update order formWorkorder (drag-and-drop)
+  const updateFormWorkorderOrder = (newOrder: FormWorkorder[]) => {
+    setFormData({ formWorkorder: newOrder });
   };
 
   const hasFetchedRef = useRef(false);
@@ -77,7 +77,7 @@ export default function MasterFormModal({
           toast.error("Gagal mengambil data!");
         }
       } else if (modal === "create") {
-        addDetailForm(formData.id);
+        addFormWorkorder(formData.id);
       }
     };
 
@@ -93,23 +93,23 @@ export default function MasterFormModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAddRow = () => {
-    if (!formData.detailForm.every((form: DetailForm) => form.namaField !== "")) {
+    if (!formData.formWorkorder.every((form: FormWorkorder) => form.namaField !== "")) {
       toast.error("Isi Nama Field terlebih dahulu");
       return;
     }
-    addDetailForm(formData.id);
+    addFormWorkorder(formData.id);
   };
 
   const handleDeleteRow = async (id: number) => {
-    const data = formData.detailForm.find((item: DetailForm) => item.id === id);
+    const data = formData.formWorkorder.find((item: FormWorkorder) => item.id === id);
     if (!data) {
       toast.error("Data tidak ditemukan!");
       return;
     }
-    const isSingleRow = formData.detailForm.length === 1;
+    const isSingleRow = formData.formWorkorder.length === 1;
     const hasValue = data.namaField.trim() !== "";
     if (isSingleRow && hasValue) {
-      updateDetailForm(formData.id, id, {
+      updateFormWorkorder(formData.id, id, {
         ...data,
         namaField: "",
         tipeField: "",
@@ -121,27 +121,28 @@ export default function MasterFormModal({
         parent: null,
         keterangan: null,
         order: 0,
-        optionForm: [],
+        kpiId: 0,
+        detailForm: [],
       });
       toast.success("Data berhasil dihapus!");
     } else if (!isSingleRow) {
-      removeDetailForm(formData.id, id);
+      removeFormWorkorder(formData.id, id);
       if (hasValue) toast.success("Data berhasil dihapus!");
     }
   };
 
   const handleSubmitRow = (id: number, value: string) => {
-    if (!formData.nama.trim() || !formData.kpiId) {
-      toast.error("Isi Nama Workorder dan KPI ID terlebih dahulu!");
+    if (!formData.nama.trim()) {
+      toast.error("Isi Nama Workorder terlebih dahulu!");
       return;
     }
     if (!value.trim()) {
       toast.error("Isi Nama Field terlebih dahulu!");
       return;
     }
-    const existingDetail = formData.detailForm.find((item: DetailForm) => item.id === id);
-    if (existingDetail) {
-      updateDetailForm(formData.id, id, { ...existingDetail, namaField: value });
+    const existingForm = formData.formWorkorder.find((item: FormWorkorder) => item.id === id);
+    if (existingForm) {
+      updateFormWorkorder(formData.id, id, { ...existingForm, namaField: value });
     }
     toast.success("Data berhasil ditambahkan!");
   };
@@ -149,12 +150,11 @@ export default function MasterFormModal({
   const handleSubmit = async () => {
     if (
       !formData.nama.trim() ||
-      !formData.kpiId ||
-      !formData.detailForm.every(
-        (form: DetailForm) => form.namaField !== "" && form.tipeField !== ""
+      !formData.formWorkorder.every(
+        (form: FormWorkorder) => form.namaField !== "" && form.tipeField !== "" && form.kpiId > 0
       )
     ) {
-      toast.error("Isi semua field terlebih dahulu!");
+      toast.error("Isi semua field terlebih dahulu, termasuk KPI untuk setiap form!");
       return;
     }
     try {
@@ -166,6 +166,7 @@ export default function MasterFormModal({
         await createJenisWorkorder(formData);
         toast.success("Data berhasil ditambahkan!");
       }
+      router.refresh();
       onClose();
     } catch (error) {
       console.error("Error submitting form:", error);
@@ -207,20 +208,7 @@ export default function MasterFormModal({
                 onChange={(e) => setFormData({ nama: e.target.value })}
                 disabled={mode}
               />
-              <SingleSelect
-                label="KPI (Rencana Tindakan)"
-                placeholder="Pilih KPI"
-                value={
-                  kpiOptions.find(
-                    (item) => item.value === String(formData.kpiId)
-                  ) || null
-                }
-                onChange={(selected) =>
-                  setFormData({ kpiId: Number(selected?.value) })
-                }
-                options={kpiOptions}
-                isDisabled={mode}
-              />
+              {/* KPI sekarang dipilih di setiap form workorder, bukan di root */}
             </div>
           </div>
           <div className="bg-grey-100 rounded-lg border-2 p-4">
@@ -247,8 +235,8 @@ export default function MasterFormModal({
                     handleAddRow,
                     mode,
                   })}
-                  data={formData.detailForm}
-                  setData={updateDetailFormOrder}
+                  data={formData.formWorkorder}
+                  setData={updateFormWorkorderOrder}
                   isDraggable={!mode}
                 />
               </div>

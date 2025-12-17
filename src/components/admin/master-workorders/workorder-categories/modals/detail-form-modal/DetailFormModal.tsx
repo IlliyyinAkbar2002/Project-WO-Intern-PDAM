@@ -14,12 +14,13 @@ import { Button } from "@/components/ui/button";
 import SingleSelect from "@/components/shared/fields/SingleSelect";
 import { toast } from "sonner";
 import { useSearchParams } from "next/navigation";
+import { useKpi } from "@/hooks/useKpi";
 import {
   getDisabledFields,
   prepareDetailForm,
   validateDetailForm,
 } from "@/utils/detailFormUtils";
-import { DetailForm, OptionForm } from "@/types";
+import { FormWorkorder, DetailForm } from "@/types";
 
 interface DetailFormModalProps {
   onClose: () => void;
@@ -32,11 +33,16 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
   const mode = submodal === "detail";
 
   const [editRowId, setEditRowId] = useState<number | null>(null);
-  const { formData, updateDetailForm } = useJenisWorkorderStore();
+  const { formData, updateFormWorkorder } = useJenisWorkorderStore();
+  const kpiData = useKpi();
+  const kpiOptions = kpiData.data.map((item) => ({
+    value: String(item.id),
+    label: item.nama,
+  }));
 
   const parentOptions = [
     { label: "Tanpa Parent", value: "0" },
-    ...(formData?.detailForm
+    ...(formData?.formWorkorder
       ?.filter(
         (item) =>
           item.id !== Number(submodalId) && item.tipeField === "dropdown"
@@ -47,9 +53,10 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
       })) || []),
   ];
 
-  const [detailForm, setDetailForm] = useState<DetailForm>({
+  const [formWorkorder, setFormWorkorder] = useState<FormWorkorder>({
     id: 0,
     jenisWorkorderId: formData.id,
+    kpiId: 0,
     namaField: "",
     tipeField: "",
     tipeData: "",
@@ -61,12 +68,12 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
     keterangan: null,
     hintText: "",
     order: 0,
-    optionForm: [],
+    detailForm: [],
   });
-  const disabledFields = getDisabledFields(detailForm.tipeField);
+  const disabledFields = getDisabledFields(formWorkorder.tipeField);
 
-  const [options, setOptions] = useState<OptionForm[]>([]);
-  const [option, setOption] = useState<OptionForm>({
+  const [options, setOptions] = useState<DetailForm[]>([]);
+  const [option, setOption] = useState<DetailForm>({
     id: 0,
     namaOpsi: "",
     parent: null,
@@ -82,12 +89,12 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
     });
   };
 
-  const parentOptionField = formData.detailForm.find(
-    (form) => form.id === detailForm.parent
+  const parentOptionField = formData.formWorkorder.find(
+    (form) => form.id === formWorkorder.parent
   );
 
   const parentOptionOptions = parentOptionField
-    ? parentOptionField.optionForm.map((item) => ({
+    ? parentOptionField.detailForm.map((item) => ({
       value: String(item.id),
       label: item.namaOpsi,
     }))
@@ -100,7 +107,7 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
     }
 
     if (options.every((opt) => opt.namaOpsi !== "")) {
-      if (detailForm.parent === 0) {
+      if (formWorkorder.parent === 0) {
         setOption((prev) => ({
           ...prev,
           parent: 0,
@@ -149,13 +156,13 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
 
     if (submodalId) {
       const numericId = Number(submodalId);
-      const existingForm = formData.detailForm.find(
+      const existingForm = formData.formWorkorder.find(
         (item) => item.id === numericId
       );
       if (existingForm) {
-        setDetailForm(existingForm);
-        setOptions(existingForm.optionForm);
-        if (existingForm.optionForm.length === 0) {
+        setFormWorkorder(existingForm);
+        setOptions(existingForm.detailForm);
+        if (existingForm.detailForm.length === 0) {
           setOptions((prev) => [
             ...prev,
             { ...option, id: -Date.now(), order: 1 },
@@ -217,7 +224,7 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
 
   const handleInputRow = (
     id: number,
-    field: keyof OptionForm,
+    field: keyof DetailForm,
     value: string | number | null
   ) => {
     setOption((prev) => ({ ...prev, id: id, [field]: value }));
@@ -225,11 +232,11 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
 
   const handleSubmit = () => {
     const numericId = Number(submodalId);
-    const isValid = validateDetailForm(detailForm, options, submodalId);
+    const isValid = validateDetailForm(formWorkorder, options, submodalId);
     if (!isValid) return;
-    const cleanedForm = prepareDetailForm(detailForm, options);
+    const cleanedForm = prepareDetailForm(formWorkorder, options);
     try {
-      updateDetailForm(formData.id, numericId, cleanedForm);
+      updateFormWorkorder(formData.id, numericId, cleanedForm);
       toast.success("Data berhasil ditambahkan!");
       onClose();
     } catch (error) {
@@ -241,7 +248,7 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 px-80">
       <div className="bg-white rounded-lg p-5 space-y-5">
         <div className="relative flex items-center justify-center">
-          <h2 className="text-3xl font-semibold text-black">Detail Field</h2>
+          <h2 className="text-3xl font-semibold text-black">Detail Form</h2>
           <button
             aria-label="Close"
             title="Close"
@@ -253,12 +260,27 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
         </div>
         <div className="grid grid-cols-3 gap-x-8 gap-y-3">
           <Input label="Jenis Work Order" value={formData.nama} disabled />
+          <SingleSelect
+            label="KPI (Rencana Tindakan)"
+            placeholder="Pilih KPI"
+            value={
+              kpiOptions.find(
+                (item) => item.value === String(formWorkorder.kpiId)
+              ) || null
+            }
+            onChange={(selected) =>
+              setFormWorkorder({ ...formWorkorder, kpiId: Number(selected?.value) })
+            }
+            options={kpiOptions}
+            isDisabled={mode}
+            required
+          />
           <Input
             label="Nama Field"
             placeholder="Isi nama field..."
-            value={detailForm.namaField || ""}
+            value={formWorkorder.namaField || ""}
             onChange={(e) =>
-              setDetailForm({ ...detailForm, namaField: e.target.value })
+              setFormWorkorder({ ...formWorkorder, namaField: e.target.value })
             }
             disabled={submodal !== "edit"}
             required
@@ -268,11 +290,11 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
             placeholder="Pilih Tipe Field"
             value={
               tipeFieldOptions.find(
-                (item) => item.value === String(detailForm.tipeField)
+                (item) => item.value === String(formWorkorder.tipeField)
               ) || null
             }
             onChange={(selected) =>
-              setDetailForm({ ...detailForm, tipeField: selected?.value })
+              setFormWorkorder({ ...formWorkorder, tipeField: selected?.value })
             }
             options={tipeFieldOptions}
             isDisabled={mode}
@@ -283,11 +305,11 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
             placeholder="Pilih Tipe Data"
             value={
               tipeDataOptions.find(
-                (item) => item.value === String(detailForm.tipeData)
+                (item) => item.value === String(formWorkorder.tipeData)
               ) || null
             }
             onChange={(selected) =>
-              setDetailForm({ ...detailForm, tipeData: selected?.value })
+              setFormWorkorder({ ...formWorkorder, tipeData: selected?.value })
             }
             options={tipeDataOptions}
             isDisabled={mode || disabledFields.includes("tipeData")}
@@ -296,9 +318,9 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
           <Input
             label="Satuan Unit"
             placeholder="cm/m/pcs"
-            value={detailForm.unitSatuan || ""}
+            value={formWorkorder.unitSatuan || ""}
             onChange={(e) =>
-              setDetailForm({ ...detailForm, unitSatuan: e.target.value })
+              setFormWorkorder({ ...formWorkorder, unitSatuan: e.target.value })
             }
             disabled={mode || disabledFields.includes("unitSatuan")}
           />
@@ -307,11 +329,11 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
             placeholder="Pilih Sifat"
             value={
               sifatOptions.find(
-                (item) => item.value === String(detailForm.sifat)
+                (item) => item.value === String(formWorkorder.sifat)
               ) || null
             }
             onChange={(selected) =>
-              setDetailForm({ ...detailForm, sifat: selected?.value })
+              setFormWorkorder({ ...formWorkorder, sifat: selected?.value })
             }
             options={sifatOptions}
             isDisabled={mode}
@@ -322,9 +344,9 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
               label="Minimal"
               type="number"
               min={0}
-              value={detailForm.min || 0}
+              value={formWorkorder.min || 0}
               onChange={(e) =>
-                setDetailForm({ ...detailForm, min: Number(e.target.value) })
+                setFormWorkorder({ ...formWorkorder, min: Number(e.target.value) })
               }
               disabled={mode || disabledFields.includes("min")}
             />
@@ -332,9 +354,9 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
               label="Maksimal"
               type="number"
               min={0}
-              value={detailForm.max || 0}
+              value={formWorkorder.max || 0}
               onChange={(e) =>
-                setDetailForm({ ...detailForm, max: Number(e.target.value) })
+                setFormWorkorder({ ...formWorkorder, max: Number(e.target.value) })
               }
               disabled={mode || disabledFields.includes("max")}
             />
@@ -344,11 +366,11 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
             placeholder="Pilih Parent Field"
             value={
               parentOptions.find(
-                (item) => item.value === String(detailForm.parent)
+                (item) => item.value === String(formWorkorder.parent)
               ) || null
             }
             onChange={(selected) =>
-              setDetailForm({ ...detailForm, parent: Number(selected?.value) })
+              setFormWorkorder({ ...formWorkorder, parent: Number(selected?.value) })
             }
             options={parentOptions}
             isDisabled={mode || disabledFields.includes("parent")}
@@ -357,14 +379,14 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
           <Input
             label="Keterangan"
             placeholder="Isi keterangan..."
-            value={detailForm.keterangan || ""}
+            value={formWorkorder.keterangan || ""}
             onChange={(e) =>
-              setDetailForm({ ...detailForm, keterangan: e.target.value })
+              setFormWorkorder({ ...formWorkorder, keterangan: e.target.value })
             }
             disabled={mode}
           />
         </div>
-        {detailForm.tipeField === "dropdown" && (
+        {formWorkorder.tipeField === "dropdown" && (
           <>
             <div className="bg-grey-100 rounded-lg p-4">
               <div className="bg-white rounded-lg overflow-hidden">

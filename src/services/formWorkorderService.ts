@@ -1,62 +1,62 @@
 import { api, ensureCsrfToken } from "@/lib/api";
-import { DetailForm } from "@/types";
+import { FormWorkorder } from "@/types";
 import { toSnakeCase } from "@/utils/caseFormatter";
-import { cleanDetailForm } from "@/utils/cleanFormData";
+import { cleanFormWorkorder } from "@/utils/cleanFormData";
 
-export const getDetailForms = async (
+export const getFormWorkorders = async (
   jenisWorkorderId: number
-): Promise<DetailForm[]> => {
+): Promise<FormWorkorder[]> => {
   try {
     const response = await api.get<any>(
-      `/v1/jenis-workorder/${jenisWorkorderId}/detail-form`
+      `/v1/jenis-workorder/${jenisWorkorderId}/form-workorder`
     );
     const items = response.data?.data ?? response.data;
-    return (items || []).map((item: any) => cleanDetailForm(item));
+    return (items || []).map((item: any) => cleanFormWorkorder(item));
   } catch (error: any) {
-    console.error("Error fetching detail forms:", error);
+    console.error("Error fetching form workorders:", error);
     throw new Error(
       error.response?.data?.message ||
       error.response?.data?.error ||
-      "Gagal mengambil detail form."
+      "Gagal mengambil form workorder."
     );
   }
 };
 
-export const getDetailFormById = async (
+export const getFormWorkorderById = async (
   jenisWorkorderId: number,
   id: number
-): Promise<DetailForm> => {
+): Promise<FormWorkorder> => {
   try {
     const response = await api.get<any>(
-      `/v1/jenis-workorder/${jenisWorkorderId}/detail-form/${id}`
+      `/v1/jenis-workorder/${jenisWorkorderId}/form-workorder/${id}`
     );
     const raw = response.data?.data ?? response.data;
-    return cleanDetailForm(raw);
+    return cleanFormWorkorder(raw);
   } catch (error: any) {
-    console.error("Error fetching detail form by id:", error);
+    console.error("Error fetching form workorder by id:", error);
     throw new Error(
       error.response?.data?.message ||
       error.response?.data?.error ||
-      "Gagal mengambil detail form."
+      "Gagal mengambil form workorder."
     );
   }
 };
 
-export const createDetailForm = async (
+export const createFormWorkorder = async (
   jenisWorkorderId: number,
-  data: DetailForm
-): Promise<DetailForm> => {
+  data: FormWorkorder
+): Promise<FormWorkorder> => {
   try {
     await ensureCsrfToken();
     const formattedData = toSnakeCase(data);
     const response = await api.post<any>(
-      `/v1/jenis-workorder/${jenisWorkorderId}/detail-form`,
+      `/v1/jenis-workorder/${jenisWorkorderId}/form-workorder`,
       formattedData
     );
     const raw = response.data?.data ?? response.data;
-    return cleanDetailForm(raw);
+    return cleanFormWorkorder(raw);
   } catch (error: any) {
-    console.error("Create detail form error:", error);
+    console.error("Create form workorder error:", error);
     if (error.response?.status === 422) {
       const validationErrors = error.response.data?.errors;
       if (validationErrors) {
@@ -67,26 +67,26 @@ export const createDetailForm = async (
     throw new Error(
       error.response?.data?.message ||
       error.response?.data?.error ||
-      "Gagal menambah detail form."
+      "Gagal menambah form workorder."
     );
   }
 };
 
-export const updateDetailForm = async (
+export const updateFormWorkorder = async (
   jenisWorkorderId: number,
   id: number,
-  data: DetailForm
-): Promise<DetailForm> => {
+  data: FormWorkorder
+): Promise<FormWorkorder> => {
   try {
     const formattedData = toSnakeCase(data);
     const response = await api.put<any>(
-      `/v1/jenis-workorder/${jenisWorkorderId}/detail-form/${id}`,
+      `/v1/jenis-workorder/${jenisWorkorderId}/form-workorder/${id}`,
       formattedData
     );
     const raw = response.data?.data ?? response.data;
-    return cleanDetailForm(raw);
+    return cleanFormWorkorder(raw);
   } catch (error: any) {
-    console.error("Update detail form error:", error);
+    console.error("Update form workorder error:", error);
     if (error.response?.status === 422) {
       const validationErrors = error.response.data?.errors;
       if (validationErrors) {
@@ -97,25 +97,32 @@ export const updateDetailForm = async (
     throw new Error(
       error.response?.data?.message ||
       error.response?.data?.error ||
-      "Gagal memperbarui detail form."
+      "Gagal memperbarui form workorder."
     );
   }
 };
 
-export const deleteDetailForm = async (
+export const deleteFormWorkorder = async (
   jenisWorkorderId: number,
   id: number
 ): Promise<void> => {
   try {
     await api.delete(
-      `/v1/jenis-workorder/${jenisWorkorderId}/detail-form/${id}`
+      `/v1/jenis-workorder/${jenisWorkorderId}/form-workorder/${id}`
     );
   } catch (error: any) {
-    console.error("Delete detail form error:", error);
+    console.error("Delete form workorder error:", error);
     throw new Error(
       error.response?.data?.message ||
       error.response?.data?.error ||
-      "Gagal menghapus detail form."
+      "Gagal menghapus form workorder."
     );
   }
 };
+
+// Backward compatibility aliases (akan dihapus nanti)
+export const getDetailForms = getFormWorkorders;
+export const getDetailFormById = getFormWorkorderById;
+export const createDetailForm = createFormWorkorder;
+export const updateDetailForm = updateFormWorkorder;
+export const deleteDetailForm = deleteFormWorkorder;

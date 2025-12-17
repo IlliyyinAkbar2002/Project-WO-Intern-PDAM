@@ -1,58 +1,65 @@
 import { api, ensureCsrfToken } from "@/lib/api";
-import { OptionForm } from "@/types";
+import { DetailForm } from "@/types";
 import { toSnakeCase } from "@/utils/caseFormatter";
-import { cleanOptionForm } from "@/utils/cleanFormData";
+import { cleanDetailForm } from "@/utils/cleanFormData";
 
-export const createOptionForm = async (
+// Endpoint baru: /form-workorder/{formWorkorderId}/detail-form
+export const createDetailForm = async (
   jenisWorkorderId: number,
-  detailFormId: number,
-  data: OptionForm
-): Promise<OptionForm> => {
+  formWorkorderId: number,
+  data: DetailForm
+): Promise<DetailForm> => {
   await ensureCsrfToken();
   const formattedData = toSnakeCase(data);
   const response = await api.post<any>(
-    `/v1/jenis-workorder/${jenisWorkorderId}/detail-form/${detailFormId}/option-form`,
+    `/v1/jenis-workorder/${jenisWorkorderId}/form-workorder/${formWorkorderId}/detail-form`,
     formattedData
   );
-  return cleanOptionForm(response.data.data);
+  return cleanDetailForm(response.data.data);
 };
 
-export const getOptionForms = async (
+export const getDetailForms = async (
   jenisWorkorderId: number,
-  detailFormId: number
-): Promise<OptionForm[]> => {
+  formWorkorderId: number
+): Promise<DetailForm[]> => {
   try {
     const response = await api.get<any>(
-      `/v1/jenis-workorder/${jenisWorkorderId}/detail-form/${detailFormId}/option-form`
+      `/v1/jenis-workorder/${jenisWorkorderId}/form-workorder/${formWorkorderId}/detail-form`
     );
     const items = response.data?.data ?? response.data;
-    return (items || []).map((item: any) => cleanOptionForm(item));
+    return (items || []).map((item: any) => cleanDetailForm(item));
   } catch {
-    throw new Error("Gagal mengambil option form.");
+    throw new Error("Gagal mengambil detail form.");
   }
 };
 
-export const updateOptionForm = async (
+export const updateDetailForm = async (
   jenisWorkorderId: number,
-  detailFormId: number,
+  formWorkorderId: number,
   id: number,
-  data: OptionForm
-): Promise<OptionForm> => {
+  data: DetailForm
+): Promise<DetailForm> => {
   await ensureCsrfToken();
   const formattedData = toSnakeCase(data);
   const response = await api.put<any>(
-    `/v1/jenis-workorder/${jenisWorkorderId}/detail-form/${detailFormId}/option-form/${id}`,
+    `/v1/jenis-workorder/${jenisWorkorderId}/form-workorder/${formWorkorderId}/detail-form/${id}`,
     formattedData
   );
-  return cleanOptionForm(response.data.data);
+  return cleanDetailForm(response.data.data);
 };
 
-export const deleteOptionForm = async (
+export const deleteDetailForm = async (
   jenisWorkorderId: number,
-  detailFormId: number,
+  formWorkorderId: number,
   id: number
 ): Promise<void> => {
   await api.delete(
-    `/v1/jenis-workorder/${jenisWorkorderId}/detail-form/${detailFormId}/option-form/${id}`
+    `/v1/jenis-workorder/${jenisWorkorderId}/form-workorder/${formWorkorderId}/detail-form/${id}`
   );
 };
+
+// Backward compatibility aliases (akan dihapus nanti)
+export const createOptionForm = createDetailForm;
+export const getOptionForms = getDetailForms;
+export const updateOptionForm = updateDetailForm;
+export const deleteOptionForm = deleteDetailForm;

@@ -1,4 +1,5 @@
-export interface OptionForm  {
+// DetailForm sekarang untuk opsi dropdown (dulunya OptionForm)
+export interface DetailForm {
   id: number;
   namaOpsi: string;
   parent: number | null;
@@ -6,9 +7,11 @@ export interface OptionForm  {
   namaParent?: string | null;
 };
 
-export interface DetailForm  {
+// FormWorkorder adalah form field dengan kpi_id (dulunya DetailForm)
+export interface FormWorkorder {
   id: number;
   jenisWorkorderId: number;
+  kpiId: number; // kpi_id pindah ke sini
   namaField: string;
   tipeField: string;
   tipeData: string | null;
@@ -20,25 +23,25 @@ export interface DetailForm  {
   keterangan: string | null;
   hintText: string;
   order: number;
-  optionForm: OptionForm[];
+  detailForm: DetailForm[]; // opsi dropdown (dulunya optionForm)
 };
 
-export interface JenisWorkorder  {
-  id : number;
+export interface JenisWorkorder {
+  id: number;
   nama: string;
-  kpiId: number;
-  detailForm: DetailForm[];
+  // kpiId dihapus dari root - sekarang di setiap formWorkorder
+  formWorkorder: FormWorkorder[]; // dulunya detailForm
 }
 
 export interface JenisWorkorderPayload {
   id?: number;
   nama: string;
-  kpiId: number;
-  detailForm?: DetailForm[];
+  // kpiId dihapus dari root - sekarang di setiap formWorkorder
+  formWorkorder?: FormWorkorder[]; // dulunya detailForm
 }
 
-export interface JenisWorkorderResponse  {
-  data: JenisWorkorder[]; 
-  totalPages: number; 
-  currentPage: number; 
+export interface JenisWorkorderResponse {
+  data: JenisWorkorder[];
+  totalPages: number;
+  currentPage: number;
 };

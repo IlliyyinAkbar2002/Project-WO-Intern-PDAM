@@ -2,7 +2,7 @@
 
 import SingleSelect from "@/components/shared/fields/SingleSelect";
 import { Button, Input } from "@/components/ui";
-import { OptionForm } from "@/types";
+import { DetailForm } from "@/types";
 import {
   PencilSimpleLineIcon,
   PlusIcon,
@@ -17,13 +17,13 @@ interface ColumnsProps {
   handleAddRow: () => void;
   handleInputRow: (
     id: number,
-    field: keyof OptionForm,
+    field: keyof DetailForm,
     value: string | number | null
   ) => void;
   handleSubmitRow: () => void;
   handleCancelEditRow: () => void;
   parentOptionOptions: { label: string; value: string }[];
-  option: OptionForm;
+  option: DetailForm;
   editRowId: number | null;
   mode: boolean;
 }
@@ -39,8 +39,8 @@ export const columns = ({
   option,
   editRowId,
   mode,
-}: ColumnsProps): ColumnDef<OptionForm>[] => {
-  const baseColumns: ColumnDef<OptionForm>[] = [
+}: ColumnsProps): ColumnDef<DetailForm>[] => {
+  const baseColumns: ColumnDef<DetailForm>[] = [
     {
       header: "No",
       size: 40,

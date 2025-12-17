@@ -10,8 +10,8 @@ interface PreviewFormModalProps {
   onClose: () => void;
 }
 export default function PreviewFormModal({ onClose }: PreviewFormModalProps) {
-  const detailForm = useJenisWorkorderStore(
-    (state) => state.formData.detailForm
+  const formWorkorder = useJenisWorkorderStore(
+    (state) => state.formData.formWorkorder
   );
   const [uploadedImages, setUploadedImages] = useState<
     Record<number, string[]>
@@ -50,7 +50,7 @@ export default function PreviewFormModal({ onClose }: PreviewFormModalProps) {
         </div>
         <div className="h-full overflow-y-auto px-5 py-4 bg-white">
           <div className="space-y-5">
-            {detailForm.map((field) => {
+            {formWorkorder.map((field) => {
               switch (field.tipeField) {
                 case "text":
                   return (
@@ -71,11 +71,11 @@ export default function PreviewFormModal({ onClose }: PreviewFormModalProps) {
                   );
                 case "dropdown":
                   const isChild = field.parent !== 0 && field.parent !== null;
-                  let availableOptions = field.optionForm;
+                  let availableOptions = field.detailForm;
                   if (isChild) {
                     const parentValue = selectedValues[field.parent ?? 0];
                     if (parentValue !== undefined && parentValue !== null) {
-                      availableOptions = field.optionForm.filter(
+                      availableOptions = field.detailForm.filter(
                         (opt) => opt.parent === parentValue
                       );
                     }
