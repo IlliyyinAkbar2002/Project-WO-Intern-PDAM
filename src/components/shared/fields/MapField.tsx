@@ -87,6 +87,7 @@ export default function MapField({
     const nextPos: LatLngExpression = [pos.lat, pos.lng];
     setMarkerPosition(nextPos);
     setMapCenter(nextPos);
+    onLocationSelect(pos.lat, pos.lng);
   }, [initialPosition]);
 
   const handleSearch = async () => {

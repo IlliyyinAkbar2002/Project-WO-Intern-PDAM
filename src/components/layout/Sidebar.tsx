@@ -25,6 +25,7 @@ import {
 import SidebarItem from "./SidebarItem";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { api } from "@/lib/api";
 
 interface SidebarProps {
   role: "admin" | "user";
@@ -134,10 +135,7 @@ export default function Sidebar({ role }: SidebarProps) {
 
   const handleLogout = async () => {
     try {
-      await fetch("http://127.0.0.1:8000/api/v1/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      });
+      await api.post("/v1/auth/logout");
 
       // Redirect ke login
       router.push("/login");

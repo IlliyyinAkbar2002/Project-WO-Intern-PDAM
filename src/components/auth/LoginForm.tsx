@@ -92,7 +92,7 @@ export default function LoginForm() {
 
       // 3. simpan ke cookie agar bisa diakses di server component
       Cookies.set("token", token, { expires: 1 }); // 1 hari
-      Cookies.set("role", roleId.toString() || "", { expires: 7 });
+      Cookies.set("role", String(roleId), { expires: 7 });
 
       // 4. set header default axios (optional, kalau mau auto-auth setelah login)
       // api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
@@ -201,9 +201,8 @@ export default function LoginForm() {
         <button
           disabled={isLoading}
           type="submit"
-          className={`w-full text-standardWhite p-3 font-medium bg-primary-500 rounded-lg hover:bg-primary-600 ${
-            isLoading ? "opacity-50 cursor-not-allowed" : ""
-          }`}
+          className={`w-full text-standardWhite p-3 font-medium bg-primary-500 rounded-lg hover:bg-primary-600 ${isLoading ? "opacity-50 cursor-not-allowed" : ""
+            }`}
         >
           {isLoading ? "Loading..." : "Masuk"}
         </button>

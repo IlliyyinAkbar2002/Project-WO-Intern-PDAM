@@ -13,8 +13,8 @@ export default async function UserDashboardPage() {
     redirect("/login");
   }
 
-  // Kalau role bukan user (2) → ke /login
-  if (role !== "2") {
+  // Kalau role bukan user (2 = Manager, 3 = Employee) → ke /login
+  if (role !== "2" && role !== "3") {
     redirect("/login");
   }
 

@@ -51,7 +51,7 @@ export default async function DashboardLayout({
     <div className="relative h-screen w-screen bg-grey-200">
       <div className="fixed top-0 h-16 w-full z-10">
         {/* <Navbar setRole={setRole} /> */}
-        <Navbar role={roleType} roleName={roleType} />
+        <Navbar role={roleType} roleName={roleName} />
       </div>
       <div className="fixed top-16 h-[calc(100vh-4rem)] w-60 z-10">
         <Sidebar role={roleType} />
