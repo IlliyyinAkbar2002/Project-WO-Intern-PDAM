@@ -14,7 +14,7 @@ import { sortOptions } from "@/constants/options";
 import { columns } from "./columns";
 import MasterFormModal from "./modals/master-form-modal/MasterFormModal";
 import ConfirmModal from "@/components/shared/modals/ConfirmModal";
-import { useJenisWorkorderStore } from "@/store/useJenisWorkorderStore";
+import { useJenisWorkorderStore } from "./useJenisWorkorderStore";
 import { JenisWorkorder } from "@/types";
 
 interface WorkorderCategoriesContainerProps {
@@ -127,7 +127,7 @@ export default function WorkorderCategoriesContainer({
     <div className="flex-col mx-28 rounded-lg overflow-hidden bg-white">
       <div className="flex items-center justify-between p-4">
         <div className="flex items-center gap-4">
-          <h2 className="text-3xl font-semibold">Jenis Workorder</h2>
+          <h2 className="text-3xl font-semibold">Workorder</h2>
           <SingleSelect
             placeholder="Terbaru"
             value={sortOptions.find((item) => item.value === sortData) || null}

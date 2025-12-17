@@ -6,7 +6,8 @@ import { columns } from "./columns";
 import { useEffect, useRef, useState } from "react";
 import { FileMagnifyingGlassIcon, XIcon } from "@phosphor-icons/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useJenisWorkorderStore } from "@/store/useJenisWorkorderStore";
+import { useJenisWorkorderStore } from "../../useJenisWorkorderStore";
+import { DetailForm } from "@/types/jenisWorkorderTypes";
 import { useKpi } from "@/hooks/useKpi";
 import DetailFormModal from "../detail-form-modal/DetailFormModal";
 import { toast } from "sonner";
@@ -54,9 +55,13 @@ export default function MasterFormModal({
     setAllFormData,
     addDetailForm,
     updateDetailForm,
-    updateDetailFormOrder,
     removeDetailForm,
   } = useJenisWorkorderStore();
+
+  // Handler untuk update order detailForm (drag-and-drop)
+  const updateDetailFormOrder = (newOrder: DetailForm[]) => {
+    setFormData({ detailForm: newOrder });
+  };
 
   const hasFetchedRef = useRef(false);
   useEffect(() => {
@@ -72,7 +77,7 @@ export default function MasterFormModal({
           toast.error("Gagal mengambil data!");
         }
       } else if (modal === "create") {
-        addDetailForm();
+        addDetailForm(formData.id);
       }
     };
 
@@ -88,15 +93,15 @@ export default function MasterFormModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAddRow = () => {
-    if (!formData.detailForm.every((form) => form.namaField !== "")) {
+    if (!formData.detailForm.every((form: DetailForm) => form.namaField !== "")) {
       toast.error("Isi Nama Field terlebih dahulu");
       return;
     }
-    addDetailForm();
+    addDetailForm(formData.id);
   };
 
   const handleDeleteRow = async (id: number) => {
-    const data = formData.detailForm.find((item) => item.id === id);
+    const data = formData.detailForm.find((item: DetailForm) => item.id === id);
     if (!data) {
       toast.error("Data tidak ditemukan!");
       return;
@@ -104,7 +109,8 @@ export default function MasterFormModal({
     const isSingleRow = formData.detailForm.length === 1;
     const hasValue = data.namaField.trim() !== "";
     if (isSingleRow && hasValue) {
-      updateDetailForm(id, {
+      updateDetailForm(formData.id, id, {
+        ...data,
         namaField: "",
         tipeField: "",
         tipeData: "",
@@ -119,7 +125,7 @@ export default function MasterFormModal({
       });
       toast.success("Data berhasil dihapus!");
     } else if (!isSingleRow) {
-      removeDetailForm(id);
+      removeDetailForm(formData.id, id);
       if (hasValue) toast.success("Data berhasil dihapus!");
     }
   };
@@ -133,7 +139,10 @@ export default function MasterFormModal({
       toast.error("Isi Nama Field terlebih dahulu!");
       return;
     }
-    updateDetailForm(id, { namaField: value });
+    const existingDetail = formData.detailForm.find((item: DetailForm) => item.id === id);
+    if (existingDetail) {
+      updateDetailForm(formData.id, id, { ...existingDetail, namaField: value });
+    }
     toast.success("Data berhasil ditambahkan!");
   };
 
@@ -142,7 +151,7 @@ export default function MasterFormModal({
       !formData.nama.trim() ||
       !formData.kpiId ||
       !formData.detailForm.every(
-        (form) => form.namaField !== "" && form.tipeField !== ""
+        (form: DetailForm) => form.namaField !== "" && form.tipeField !== ""
       )
     ) {
       toast.error("Isi semua field terlebih dahulu!");
@@ -174,9 +183,9 @@ export default function MasterFormModal({
             {modal === "create"
               ? "Buat"
               : modal === "detail"
-              ? "Detail"
-              : "Edit"}{" "}
-            Jenis Work Order
+                ? "Detail"
+                : "Edit"}{" "}
+            Form Work Order
           </h2>
           <button
             aria-label="Close"
@@ -189,7 +198,7 @@ export default function MasterFormModal({
         </div>
         <div className="p-6 space-y-4">
           <div className="rounded-lg border-2 p-4 bg-grey-100 space-y-2">
-            <h3 className="text-2xl font-semibold">Form Jenis Work Order</h3>
+            <h3 className="text-2xl font-semibold">Form Work Order</h3>
             <div className="grid grid-cols-3 gap-8">
               <Input
                 label="Jenis Work Order"
@@ -217,7 +226,7 @@ export default function MasterFormModal({
           <div className="bg-grey-100 rounded-lg border-2 p-4">
             <div className="bg-white rounded-lg overflow-hidden">
               <div className="flex p-4 justify-between items-center">
-                <h3 className="text-2xl font-semibold">List Field Form</h3>
+                <h3 className="text-2xl font-semibold">List Field Form Work Order</h3>
                 <button
                   aria-label="Preview form"
                   title="Preview form"

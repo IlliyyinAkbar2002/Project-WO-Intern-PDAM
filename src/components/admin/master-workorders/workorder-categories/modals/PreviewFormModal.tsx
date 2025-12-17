@@ -1,7 +1,7 @@
 import ImageUpload from "@/components/shared/fields/ImageUpload";
 import SingleSelect from "@/components/shared/fields/SingleSelect";
 import { Input } from "@/components/ui/input";
-import { useJenisWorkorderStore } from "@/store/useJenisWorkorderStore";
+import { useJenisWorkorderStore } from "../useJenisWorkorderStore";
 import { XIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { toast } from "sonner";

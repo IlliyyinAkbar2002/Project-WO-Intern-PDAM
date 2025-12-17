@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { useJenisWorkorderStore } from "@/store/useJenisWorkorderStore";
+import { useJenisWorkorderStore } from "../../useJenisWorkorderStore";
 import { XIcon } from "@phosphor-icons/react";
 import { Input } from "@/components/ui/input";
 import {
@@ -49,6 +49,7 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
 
   const [detailForm, setDetailForm] = useState<DetailForm>({
     id: 0,
+    jenisWorkorderId: formData.id,
     namaField: "",
     tipeField: "",
     tipeData: "",
@@ -87,9 +88,9 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
 
   const parentOptionOptions = parentOptionField
     ? parentOptionField.optionForm.map((item) => ({
-        value: String(item.id),
-        label: item.namaOpsi,
-      }))
+      value: String(item.id),
+      label: item.namaOpsi,
+    }))
     : [{ label: "Tanpa Parent", value: "0" }];
 
   const handleAddRow = () => {
@@ -120,11 +121,11 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
         prev.map((opt) =>
           opt.id === option.id
             ? {
-                ...opt,
-                id: option.id,
-                namaOpsi: option.namaOpsi,
-                parent: option.parent,
-              }
+              ...opt,
+              id: option.id,
+              namaOpsi: option.namaOpsi,
+              parent: option.parent,
+            }
             : opt
         )
       );
@@ -228,7 +229,7 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
     if (!isValid) return;
     const cleanedForm = prepareDetailForm(detailForm, options);
     try {
-      updateDetailForm(numericId, cleanedForm);
+      updateDetailForm(formData.id, numericId, cleanedForm);
       toast.success("Data berhasil ditambahkan!");
       onClose();
     } catch (error) {
