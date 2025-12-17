@@ -29,14 +29,14 @@ export interface FormWorkorder {
 export interface JenisWorkorder {
   id: number;
   nama: string;
-  // kpiId dihapus dari root - sekarang di setiap formWorkorder
+  kpiId: number; // kpiId di root level
   formWorkorder: FormWorkorder[]; // dulunya detailForm
 }
 
 export interface JenisWorkorderPayload {
   id?: number;
   nama: string;
-  // kpiId dihapus dari root - sekarang di setiap formWorkorder
+  kpiId?: number; // kpiId di root level
   formWorkorder?: FormWorkorder[]; // dulunya detailForm
 }
 

@@ -4,10 +4,9 @@ export function cleanJenisWorkorder(raw: any): JenisWorkorder {
   return {
     id: raw.id,
     nama: raw.nama,
-    // kpiId dihapus dari root - sekarang di setiap formWorkorder
+    kpiId: raw.kpi_id, // kpiId di root level
     formWorkorder: (raw.form_workorder || []).map((fw: any) => cleanFormWorkorder(fw)),
   };
-
 }
 
 // Bersihkan data form workorder (dulunya detail form)

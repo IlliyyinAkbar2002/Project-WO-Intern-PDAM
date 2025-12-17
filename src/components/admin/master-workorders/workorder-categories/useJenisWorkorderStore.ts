@@ -82,7 +82,8 @@ export const useJenisWorkorderStore = create<JenisWorkorderState>(
     formData: {
       id: 0,
       nama: "",
-      formWorkorder: [], // kpiId dihapus dari root, sekarang di setiap formWorkorder
+      kpiId: 0, // kpiId di root level
+      formWorkorder: [],
     },
 
     setFormData: (data) =>
@@ -94,7 +95,7 @@ export const useJenisWorkorderStore = create<JenisWorkorderState>(
 
     resetForm: () =>
       set({
-        formData: { id: 0, nama: "", formWorkorder: [] },
+        formData: { id: 0, nama: "", kpiId: 0, formWorkorder: [] },
       }),
 
     // Master
@@ -107,8 +108,8 @@ export const useJenisWorkorderStore = create<JenisWorkorderState>(
       const current = get().formData;
       const payload: JenisWorkorderPayload = {
         nama: data.nama ?? current.nama ?? "",
+        kpiId: current.kpiId ?? 0, // kpiId di root level
         formWorkorder: current.formWorkorder ?? [],
-        // kpiId dihapus dari root - sekarang di setiap formWorkorder
       };
       const localFormWorkordersSnapshot = [...(current.formWorkorder ?? [])];
 
@@ -272,8 +273,8 @@ export const useJenisWorkorderStore = create<JenisWorkorderState>(
       const payload: JenisWorkorderPayload = {
         id,
         nama: data.nama ?? current.nama ?? "",
+        kpiId: data.kpiId ?? current.kpiId ?? 0, // kpiId di root level
         formWorkorder: data.formWorkorder ?? current.formWorkorder ?? [],
-        // kpiId dihapus dari root - sekarang di setiap formWorkorder
       };
       const jw = await apiUpdateJenisWorkorder(id, payload);
       set({ formData: jw });
@@ -282,7 +283,7 @@ export const useJenisWorkorderStore = create<JenisWorkorderState>(
     deleteJenisWorkorder: async (id: number) => {
       await apiDeleteJenisWorkorder(id);
       set({
-        formData: { id: 0, nama: "", formWorkorder: [] },
+        formData: { id: 0, nama: "", kpiId: 0, formWorkorder: [] },
       });
     },
 

@@ -150,11 +150,13 @@ export default function MasterFormModal({
   const handleSubmit = async () => {
     if (
       !formData.nama.trim() ||
+      !formData.kpiId ||
+      formData.kpiId <= 0 ||
       !formData.formWorkorder.every(
         (form: FormWorkorder) => form.namaField !== "" && form.tipeField !== "" && form.kpiId > 0
       )
     ) {
-      toast.error("Isi semua field terlebih dahulu, termasuk KPI untuk setiap form!");
+      toast.error("Isi semua field terlebih dahulu, termasuk KPI!");
       return;
     }
     try {
@@ -208,7 +210,14 @@ export default function MasterFormModal({
                 onChange={(e) => setFormData({ nama: e.target.value })}
                 disabled={mode}
               />
-              {/* KPI sekarang dipilih di setiap form workorder, bukan di root */}
+              <SingleSelect
+                label="KPI (Rencana Tindakan)"
+                placeholder="Pilih KPI"
+                options={kpiOptions}
+                value={kpiOptions.find((opt) => opt.value === String(formData.kpiId)) || null}
+                onChange={(val) => setFormData({ kpiId: Number(val.value) })}
+                isDisabled={mode}
+              />
             </div>
           </div>
           <div className="bg-grey-100 rounded-lg border-2 p-4">
