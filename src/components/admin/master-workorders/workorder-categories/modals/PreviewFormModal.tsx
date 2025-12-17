@@ -1,7 +1,7 @@
 import ImageUpload from "@/components/shared/fields/ImageUpload";
 import SingleSelect from "@/components/shared/fields/SingleSelect";
 import { Input } from "@/components/ui/input";
-import { useJenisWorkorderStore } from "@/components/admin/master-workorders/workorder-categories/useJenisWorkorderStore";
+import { useJenisWorkorderStore } from "@/store/useJenisWorkorderStore";
 import { XIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -65,9 +65,7 @@ export default function PreviewFormModal({ onClose }: PreviewFormModalProps) {
                         required={field.sifat === "mandatory"}
                       />
                       {field.hintText && (
-                        <p className="text-xs text-grey-500 pl-1">
-                          {field.hintText}
-                        </p>
+                        <p className="text-xs text-grey-500 pl-1">{field.hintText}</p>
                       )}
                     </div>
                   );
@@ -94,9 +92,7 @@ export default function PreviewFormModal({ onClose }: PreviewFormModalProps) {
                     <div key={field.id} className="space-y-1">
                       <SingleSelect
                         label={field.namaField}
-                        placeholder={
-                          field.hintText || `Pilih ${field.namaField}`
-                        }
+                        placeholder={field.hintText || `Pilih ${field.namaField}`}
                         value={selectedOption}
                         onChange={(selected) =>
                           handleSelectChange(field.id, Number(selected.value))
@@ -106,9 +102,7 @@ export default function PreviewFormModal({ onClose }: PreviewFormModalProps) {
                         required={field.sifat === "mandatory"}
                       />
                       {field.hintText && (
-                        <p className="text-xs text-grey-500 pl-1">
-                          {field.hintText}
-                        </p>
+                        <p className="text-xs text-grey-500 pl-1">{field.hintText}</p>
                       )}
                     </div>
                   );
@@ -124,9 +118,7 @@ export default function PreviewFormModal({ onClose }: PreviewFormModalProps) {
                         required={field.sifat === "mandatory"}
                       />
                       {field.hintText && (
-                        <p className="text-xs text-grey-500 pl-1">
-                          {field.hintText}
-                        </p>
+                        <p className="text-xs text-grey-500 pl-1">{field.hintText}</p>
                       )}
                     </div>
                   );
@@ -140,9 +132,7 @@ export default function PreviewFormModal({ onClose }: PreviewFormModalProps) {
                         required={field.sifat === "mandatory"}
                       />
                       {field.hintText && (
-                        <p className="text-xs text-grey-500 pl-1">
-                          {field.hintText}
-                        </p>
+                        <p className="text-xs text-grey-500 pl-1">{field.hintText}</p>
                       )}
                     </div>
                   );

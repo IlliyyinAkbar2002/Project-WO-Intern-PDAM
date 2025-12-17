@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { useJenisWorkorderStore } from "@/components/admin/master-workorders/workorder-categories/useJenisWorkorderStore";
+import { useJenisWorkorderStore } from "@/store/useJenisWorkorderStore";
 import { XIcon } from "@phosphor-icons/react";
 import { Input } from "@/components/ui/input";
 import {
@@ -32,12 +32,8 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
   const mode = submodal === "detail";
 
   const [editRowId, setEditRowId] = useState<number | null>(null);
+  const { formData, updateDetailForm } = useJenisWorkorderStore();
 
-  // Store: ambil formData (master + detail) dan fungsi update state lokal
-  const { formData, updateDetailForm: updateDetailFormStore } =
-    useJenisWorkorderStore();
-
-  // Opsi parent field (hanya field bertipe dropdown selain current)
   const parentOptions = [
     { label: "Tanpa Parent", value: "0" },
     ...(formData?.detailForm
@@ -51,10 +47,8 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
       })) || []),
   ];
 
-  // State detail form yang sedang diedit/dibuat (wajib punya jenisWorkorderId)
   const [detailForm, setDetailForm] = useState<DetailForm>({
     id: 0,
-    jenisWorkorderId: formData.id,
     namaField: "",
     tipeField: "",
     tipeData: "",
@@ -68,18 +62,8 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
     order: 0,
     optionForm: [],
   });
-
-  // Sync jenisWorkorderId jika formData berubah
-  useEffect(() => {
-    setDetailForm((prev) => ({
-      ...prev,
-      jenisWorkorderId: formData.id,
-    }));
-  }, [formData.id]);
-
   const disabledFields = getDisabledFields(detailForm.tipeField);
 
-  // State untuk daftar opsi dan opsi yang sedang diedit
   const [options, setOptions] = useState<OptionForm[]>([]);
   const [option, setOption] = useState<OptionForm>({
     id: 0,
@@ -97,25 +81,30 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
     });
   };
 
-  // Daftar opsi parent berdasarkan field parent yang dipilih
   const parentOptionField = formData.detailForm.find(
     (form) => form.id === detailForm.parent
   );
-  const parentOptionOptions =
-    parentOptionField && parentOptionField.optionForm.length > 0
-      ? parentOptionField.optionForm.map((item) => ({
+
+  const parentOptionOptions = parentOptionField
+    ? parentOptionField.optionForm.map((item) => ({
         value: String(item.id),
         label: item.namaOpsi,
       }))
-      : [{ label: "Tanpa Parent", value: "0" }];
+    : [{ label: "Tanpa Parent", value: "0" }];
 
-  // Tambah baris opsi baru (local state)
   const handleAddRow = () => {
     if (editRowId) {
       toast.error("Simpan perubahan opsi terlebih dahulu!");
       return;
     }
+
     if (options.every((opt) => opt.namaOpsi !== "")) {
+      if (detailForm.parent === 0) {
+        setOption((prev) => ({
+          ...prev,
+          parent: 0,
+        }));
+      }
       setOptions((prev) => [
         ...prev,
         { ...option, id: -Date.now(), order: prev.length + 1 },
@@ -125,13 +114,17 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
     }
   };
 
-  // Submit baris opsi yang sedang diedit/dimasukkan (local state)
   const handleSubmitRow = () => {
     if (option.namaOpsi.trim() !== "" && option.parent !== null) {
       setOptions((prev) =>
         prev.map((opt) =>
           opt.id === option.id
-            ? { ...opt, namaOpsi: option.namaOpsi, parent: option.parent }
+            ? {
+                ...opt,
+                id: option.id,
+                namaOpsi: option.namaOpsi,
+                parent: option.parent,
+              }
             : opt
         )
       );
@@ -148,7 +141,6 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
     resetOption();
   };
 
-  // Prefill data saat membuka modal edit/detail berdasarkan submodal_id
   const hasFetchedRef = useRef(false);
   useEffect(() => {
     if (hasFetchedRef.current) return;
@@ -160,27 +152,29 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
         (item) => item.id === numericId
       );
       if (existingForm) {
-        setDetailForm({
-          ...existingForm,
-          jenisWorkorderId: existingForm.jenisWorkorderId ?? formData.id,
-        });
+        setDetailForm(existingForm);
         setOptions(existingForm.optionForm);
+        if (existingForm.optionForm.length === 0) {
+          setOptions((prev) => [
+            ...prev,
+            { ...option, id: -Date.now(), order: 1 },
+          ]);
+        }
       }
     }
   }, [submodalId]);
 
-  // Tambahkan nama parent (display) ke tiap opsi untuk tabel
-  const modifiedOptions = options.map((opt) => {
+  //get parrent name atau parent label
+  const modifiedOptions = options.map((option) => {
     const parentOption = parentOptionOptions.find(
-      (parent) => parent.value === String(opt.parent)
+      (parent) => parent.value === String(option.parent)
     );
     return {
-      ...opt,
+      ...option,
       namaParent: parentOption ? parentOption.label : "Isi parent...",
     };
   });
 
-  // Edit satu baris opsi
   const handleEditRow = (id: number) => {
     const optionToEdit = options.find((opt) => opt.id === id);
     if (optionToEdit && optionToEdit.namaOpsi !== "") {
@@ -188,27 +182,38 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
       setEditRowId(id);
     }
   };
-
-  // Batalkan edit opsi
   const handleCancelEditRow = () => {
     setEditRowId(null);
     resetOption();
   };
 
-  // Hapus baris opsi (local state)
   const handleDeleteRow = (id: number) => {
     const data = options.find((item) => item.id === id);
     if (!data) {
       toast.error("Data tidak ditemukan!");
       return;
     }
-    const newOptions = options.filter((opt) => opt.id !== id);
-    setOptions(newOptions.map((opt, index) => ({ ...opt, order: index + 1 })));
-    toast.success("Data berhasil dihapus!");
+    const isSingleRow = options.length === 1;
+    const hasValue = data.namaOpsi.trim() !== "";
+    if (isSingleRow && hasValue) {
+      setOptions((prev) =>
+        prev.map((opt) =>
+          opt.id === id ? { ...opt, namaOpsi: "", parent: null } : opt
+        )
+      );
+      toast.success("Data berhasil dihapus!");
+    } else if (!isSingleRow) {
+      const newOptions = options.filter((opt) => opt.id !== id);
+      const updatedOptions = newOptions.map((opt, index) => ({
+        ...opt,
+        order: index + 1,
+      }));
+      setOptions(updatedOptions);
+      if (hasValue) toast.success("Data berhasil dihapus!");
+    }
     resetOption();
   };
 
-  // Input perubahan field pada opsi yang sedang diedit
   const handleInputRow = (
     id: number,
     field: keyof OptionForm,
@@ -217,24 +222,17 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
     setOption((prev) => ({ ...prev, id: id, [field]: value }));
   };
 
-  // Submit detail form: persist ke backend via service, lalu sinkronkan store
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
+    const numericId = Number(submodalId);
     const isValid = validateDetailForm(detailForm, options, submodalId);
     if (!isValid) return;
-
     const cleanedForm = prepareDetailForm(detailForm, options);
-    // Catatan:
-    // - Untuk master yang belum tersimpan (id=0), updateDetailFormStore akan menyimpan secara lokal.
-    // - Untuk master & detail yang sudah tersimpan (id>0), updateDetailFormStore akan memanggil API update.
     try {
-      await updateDetailFormStore(formData.id, detailForm.id, cleanedForm);
-      toast.success("Data berhasil disimpan!");
+      updateDetailForm(numericId, cleanedForm);
+      toast.success("Data berhasil ditambahkan!");
       onClose();
     } catch (error) {
-      console.error(error);
-      const message =
-        error instanceof Error ? error.message : "Gagal menyimpan data!";
-      toast.error(message);
+      toast.error("Gagal menyimpan data!");
     }
   };
 
@@ -252,11 +250,8 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
             <XIcon className="text-black" size={20} />
           </button>
         </div>
-
-        {/* Form field utama */}
         <div className="grid grid-cols-3 gap-x-8 gap-y-3">
           <Input label="Jenis Work Order" value={formData.nama} disabled />
-
           <Input
             label="Nama Field"
             placeholder="Isi nama field..."
@@ -267,7 +262,6 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
             disabled={submodal !== "edit"}
             required
           />
-
           <SingleSelect
             label="Tipe Field"
             placeholder="Pilih Tipe Field"
@@ -277,16 +271,12 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
               ) || null
             }
             onChange={(selected) =>
-              setDetailForm({
-                ...detailForm,
-                tipeField: selected?.value,
-              })
+              setDetailForm({ ...detailForm, tipeField: selected?.value })
             }
             options={tipeFieldOptions}
             isDisabled={mode}
             required
           />
-
           <SingleSelect
             label="Tipe Data"
             placeholder="Pilih Tipe Data"
@@ -296,16 +286,12 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
               ) || null
             }
             onChange={(selected) =>
-              setDetailForm({
-                ...detailForm,
-                tipeData: selected?.value,
-              })
+              setDetailForm({ ...detailForm, tipeData: selected?.value })
             }
             options={tipeDataOptions}
             isDisabled={mode || disabledFields.includes("tipeData")}
             required
           />
-
           <Input
             label="Satuan Unit"
             placeholder="cm/m/pcs"
@@ -315,7 +301,6 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
             }
             disabled={mode || disabledFields.includes("unitSatuan")}
           />
-
           <SingleSelect
             label="Sifat"
             placeholder="Pilih Sifat"
@@ -325,27 +310,20 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
               ) || null
             }
             onChange={(selected) =>
-              setDetailForm({
-                ...detailForm,
-                sifat: selected?.value,
-              })
+              setDetailForm({ ...detailForm, sifat: selected?.value })
             }
             options={sifatOptions}
             isDisabled={mode}
             required
           />
-
           <div className="grid grid-cols-2 gap-2">
             <Input
               label="Minimal"
               type="number"
               min={0}
-              value={detailForm.min ?? 0}
+              value={detailForm.min || 0}
               onChange={(e) =>
-                setDetailForm({
-                  ...detailForm,
-                  min: Number(e.target.value),
-                })
+                setDetailForm({ ...detailForm, min: Number(e.target.value) })
               }
               disabled={mode || disabledFields.includes("min")}
             />
@@ -353,17 +331,13 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
               label="Maksimal"
               type="number"
               min={0}
-              value={detailForm.max ?? 0}
+              value={detailForm.max || 0}
               onChange={(e) =>
-                setDetailForm({
-                  ...detailForm,
-                  max: Number(e.target.value),
-                })
+                setDetailForm({ ...detailForm, max: Number(e.target.value) })
               }
               disabled={mode || disabledFields.includes("max")}
             />
           </div>
-
           <SingleSelect
             label="Parent Field"
             placeholder="Pilih Parent Field"
@@ -373,61 +347,52 @@ export default function DetailFormModal({ onClose }: DetailFormModalProps) {
               ) || null
             }
             onChange={(selected) =>
-              setDetailForm({
-                ...detailForm,
-                parent: Number(selected?.value),
-              })
+              setDetailForm({ ...detailForm, parent: Number(selected?.value) })
             }
             options={parentOptions}
             isDisabled={mode || disabledFields.includes("parent")}
             required
           />
-
           <Input
             label="Keterangan"
             placeholder="Isi keterangan..."
             value={detailForm.keterangan || ""}
             onChange={(e) =>
-              setDetailForm({
-                ...detailForm,
-                keterangan: e.target.value,
-              })
+              setDetailForm({ ...detailForm, keterangan: e.target.value })
             }
             disabled={mode}
           />
         </div>
-
-        {/* Tabel opsi untuk tipe dropdown */}
         {detailForm.tipeField === "dropdown" && (
-          <div className="bg-grey-100 rounded-lg p-4">
-            <div className="bg-white rounded-lg overflow-hidden">
-              <div className="flex p-4 justify-between items-center">
-                <h3 className="text-2xl font-semibold">Detail Pilihan</h3>
-              </div>
-              <div className="overflow-auto max-h-[202px]">
-                <DraggableTable
-                  columns={columns({
-                    handleEditRow,
-                    handleDeleteRow,
-                    handleAddRow,
-                    handleInputRow,
-                    handleSubmitRow,
-                    handleCancelEditRow,
-                    parentOptionOptions,
-                    option,
-                    editRowId,
-                    mode,
-                  })}
-                  data={modifiedOptions}
-                  setData={setOptions}
-                  isDraggable={!mode}
-                />
+          <>
+            <div className="bg-grey-100 rounded-lg p-4">
+              <div className="bg-white rounded-lg overflow-hidden">
+                <div className="flex p-4 justify-between items-center">
+                  <h3 className="text-2xl font-semibold">Detail Pilihan</h3>
+                </div>
+                <div className="overflow-auto max-h-[202px]">
+                  <DraggableTable
+                    columns={columns({
+                      handleEditRow,
+                      handleDeleteRow,
+                      handleAddRow,
+                      handleInputRow,
+                      handleSubmitRow,
+                      handleCancelEditRow,
+                      parentOptionOptions,
+                      option,
+                      editRowId,
+                      mode,
+                    })}
+                    data={modifiedOptions}
+                    setData={setOptions}
+                    isDraggable={!mode}
+                  />
+                </div>
               </div>
             </div>
-          </div>
+          </>
         )}
-
-        {/* Tombol simpan */}
         {!mode && (
           <div className="flex justify-end">
             <Button variant="primary" size="md" onClick={handleSubmit}>
