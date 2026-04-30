@@ -10,7 +10,7 @@ import {
   useMapEvents,
   Circle,
 } from "react-leaflet";
-import L, { LatLngExpression, Marker as LeafletMarker } from "leaflet";
+import L, { LatLngExpression, LatLngTuple, Marker as LeafletMarker } from "leaflet";
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
@@ -28,14 +28,15 @@ const baseContainerStyle = {
   height: "300px",
   borderRadius: "8px",
 } as const;
-const defaultCenter: LatLngExpression = [-7.265437, 112.754072];
+
+const defaultCenter: LatLngTuple = [-7.265437, 112.754072];
 
 interface MapFieldProps {
   onLocationSelect: (lat: number, lng: number) => void;
-  initialPosition?: LatLngExpression;
+  initialPosition?: LatLngTuple;
   showSearch?: boolean;
   radius?: number;
-  height?: number; // px
+  height?: number;
 }
 
 function MapClickHandler({
@@ -52,6 +53,7 @@ function MapClickHandler({
       const lat = parseFloat(e.latlng.lat.toFixed(6));
       const lng = parseFloat(e.latlng.lng.toFixed(6));
       const newPos: LatLngExpression = [lat, lng];
+
       setMarkerPosition(newPos);
       setMapCenter(newPos);
       onLocationSelect(lat, lng);
@@ -62,9 +64,11 @@ function MapClickHandler({
 
 function ChangeMapView({ center }: { center: LatLngExpression }) {
   const map = useMap();
+
   useEffect(() => {
     map.setView(center);
-  }, [center]);
+  }, [center, map]);
+
   return null;
 }
 
@@ -82,33 +86,59 @@ export default function MapField({
   const [isSearching, setIsSearching] = useState(false);
   const markerRef = useRef<LeafletMarker | null>(null);
 
+  // ✅ FIX: Hindari infinite loop
   useEffect(() => {
     const pos = L.latLng(initialPosition);
-    const nextPos: LatLngExpression = [pos.lat, pos.lng];
-    setMarkerPosition(nextPos);
-    setMapCenter(nextPos);
-    onLocationSelect(pos.lat, pos.lng);
-  }, [initialPosition]);
+    const nextLat = pos.lat;
+    const nextLng = pos.lng;
+
+    setMarkerPosition((prev) => {
+      const prevArr = Array.isArray(prev) ? prev : [0, 0];
+      if (prevArr[0] === nextLat && prevArr[1] === nextLng) {
+        return prev;
+      }
+      return [nextLat, nextLng];
+    });
+
+    setMapCenter((prev) => {
+      const prevArr = Array.isArray(prev) ? prev : [0, 0];
+      if (prevArr[0] === nextLat && prevArr[1] === nextLng) {
+        return prev;
+      }
+      return [nextLat, nextLng];
+    });
+
+    // ⚠️ OPTIONAL: boleh dihapus kalau tidak ingin trigger parent saat initial load
+    onLocationSelect?.(nextLat, nextLng);
+  }, [initialPosition, onLocationSelect]);
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) return;
+
     setIsSearching(true);
     try {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-          searchTerm
-        )}&limit=1`
+          searchTerm,
+        )}&limit=1`,
       );
+
       const data = await response.json();
+
       if (data && data.length > 0) {
         const lat = parseFloat(data[0].lat).toFixed(6);
         const lng = parseFloat(data[0].lon).toFixed(6);
-        const newPos: LatLngExpression = [parseFloat(lat), parseFloat(lng)];
+
+        const newLat = parseFloat(lat);
+        const newLng = parseFloat(lng);
+        const newPos: LatLngExpression = [newLat, newLng];
+
         setMapCenter(newPos);
         setMarkerPosition(newPos);
-        onLocationSelect(parseFloat(lat), parseFloat(lng));
+        onLocationSelect(newLat, newLng);
+
         if (markerRef.current) {
-          markerRef.current.openPopup(); // Buka popup setelah pencarian
+          markerRef.current.openPopup();
         }
       } else {
         alert("Lokasi tidak ditemukan.");
@@ -152,46 +182,42 @@ export default function MapField({
         }}
       >
         <ChangeMapView center={mapCenter} />
+
         <TileLayer
           attribution=""
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+
         <Marker
           position={markerPosition}
           draggable
           ref={markerRef}
           eventHandlers={{
-            mouseover: () => {
-              if (markerRef.current) {
-                markerRef.current.openPopup();
-              }
-            },
-            mouseout: () => {
-              if (markerRef.current) {
-                markerRef.current.closePopup();
-              }
-            },
+            mouseover: () => markerRef.current?.openPopup(),
+            mouseout: () => markerRef.current?.closePopup(),
             dragend: (e) => {
               const pos = e.target.getLatLng();
               const lat = parseFloat(pos.lat.toFixed(6));
               const lng = parseFloat(pos.lng.toFixed(6));
+
               setMarkerPosition([lat, lng]);
               setMapCenter([lat, lng]);
               onLocationSelect(lat, lng);
-              if (markerRef.current) {
-                markerRef.current.openPopup();
-              }
+
+              markerRef.current?.openPopup();
             },
           }}
         >
           <Popup>Anda bisa menggeser penanda ini.</Popup>
         </Marker>
+
         <MapClickHandler
           setMarkerPosition={setMarkerPosition}
           onLocationSelect={onLocationSelect}
           setMapCenter={setMapCenter}
         />
-        {radius && (
+
+        {radius ? (
           <Circle
             center={markerPosition}
             radius={radius}
@@ -201,7 +227,7 @@ export default function MapField({
               fillOpacity: 0.2,
             }}
           />
-        )}
+        ) : null}
       </MapContainer>
     </div>
   );

@@ -106,7 +106,7 @@ export default function LoginForm() {
         typeof roleId === "string" ? parseInt(roleId) : roleId;
       if (numericRoleId === 1) {
         router.push("/protected/admin");
-      } else if (numericRoleId === 2 || numericRoleId === 3) {
+      } else if (numericRoleId === 2) {
         router.push("/protected/user");
       } else {
         setError("Role tidak dikenali");

@@ -18,7 +18,7 @@ import {
   getJenisWorkorderById,
   updateJenisWorkorder,
 } from "@/services";
-import { Button, Input } from "@/components/ui";
+import { Button } from "@/components/ui";
 
 interface MasterFormModalProps {
   modal: string;
@@ -98,13 +98,14 @@ export default function MasterFormModal({
     label: item.nama,
   }));
 
-  // Toggle untuk manual entry jenis workorder
-  const [isManualEntry, setIsManualEntry] = useState(false);
-
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAddRow = () => {
-    if (!formData.formWorkorder.every((form: FormWorkorder) => form.namaField !== "")) {
+    if (
+      !formData.formWorkorder.every(
+        (form: FormWorkorder) => form.namaField !== "",
+      )
+    ) {
       toast.error("Isi Nama Field terlebih dahulu");
       return;
     }
@@ -112,7 +113,9 @@ export default function MasterFormModal({
   };
 
   const handleDeleteRow = async (id: number) => {
-    const data = formData.formWorkorder.find((item: FormWorkorder) => item.id === id);
+    const data = formData.formWorkorder.find(
+      (item: FormWorkorder) => item.id === id,
+    );
     if (!data) {
       toast.error("Data tidak ditemukan!");
       return;
@@ -150,9 +153,14 @@ export default function MasterFormModal({
       toast.error("Isi Nama Field terlebih dahulu!");
       return;
     }
-    const existingForm = formData.formWorkorder.find((item: FormWorkorder) => item.id === id);
+    const existingForm = formData.formWorkorder.find(
+      (item: FormWorkorder) => item.id === id,
+    );
     if (existingForm) {
-      updateFormWorkorder(formData.id, id, { ...existingForm, namaField: value });
+      updateFormWorkorder(formData.id, id, {
+        ...existingForm,
+        namaField: value,
+      });
     }
     toast.success("Data berhasil ditambahkan!");
   };
@@ -163,7 +171,8 @@ export default function MasterFormModal({
       !formData.kpiId ||
       formData.kpiId <= 0 ||
       !formData.formWorkorder.every(
-        (form: FormWorkorder) => form.namaField !== "" && form.tipeField !== "" && form.kpiId > 0
+        (form: FormWorkorder) =>
+          form.namaField !== "" && form.tipeField !== "" && form.kpiId > 0,
       )
     ) {
       toast.error("Isi semua field terlebih dahulu, termasuk KPI!");
@@ -214,61 +223,56 @@ export default function MasterFormModal({
             <h3 className="text-2xl font-semibold">Form Work Order</h3>
             <div className="grid grid-cols-2 gap-8">
               <div className="flex items-end gap-2">
-                {isManualEntry ? (
-                  <div className="flex-1">
-                    <Input
-                      label="Jenis Work Order"
-                      placeholder="Isi jenis workorder..."
-                      value={formData.nama}
-                      onChange={(e) => setFormData({ nama: e.target.value })}
-                      disabled={mode}
-                    />
-                  </div>
-                ) : (
-                  <div className="flex-1">
-                    <SingleSelect
-                      label="Jenis Work Order"
-                      placeholder="Pilih jenis work order..."
-                      options={jenisWorkorderOptions}
-                      value={jenisWorkorderOptions.find((opt) => opt.label === formData.nama) || null}
-                      onChange={(val) => setFormData({ nama: val.label })}
-                      isDisabled={mode}
-                    />
-                  </div>
-                )}
-                <label
-                  className="flex items-center justify-center w-10 h-10 mb-1 border-2 rounded cursor-pointer transition-colors"
-                  style={{
-                    borderColor: isManualEntry ? '#1E4DB7' : '#d1d5db',
-                    backgroundColor: isManualEntry ? '#1E4DB7' : 'white',
-                  }}
-                  title={isManualEntry ? "Mode manual entry aktif" : "Klik untuk manual entry"}
-                >
-                  <input
-                    type="checkbox"
-                    checked={isManualEntry}
-                    onChange={(e) => {
-                      setIsManualEntry(e.target.checked);
-                      if (e.target.checked) {
-                        // Reset nama when switching to manual entry
-                        setFormData({ nama: "" });
-                      }
-                    }}
-                    disabled={mode}
-                    className="sr-only"
+                <div className="flex-1">
+                  <SingleSelect
+                    label="Jenis Work Order"
+                    placeholder="Pilih jenis work order"
+                    options={jenisWorkorderOptions}
+                    value={
+                      jenisWorkorderOptions.find(
+                        (opt) => opt.label === formData.nama,
+                      ) || null
+                    }
+                    onChange={(val) => setFormData({ nama: val.label })}
+                    isDisabled={mode}
                   />
-                  {isManualEntry && (
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </label>
+                </div>
               </div>
+              {/* SingleSelect KPI */}
+              <SingleSelect
+                label="Parameter Pengaduan"
+                placeholder="Pilih Pengaduan"
+                options={kpiOptions}
+                value={
+                  kpiOptions.find(
+                    (opt) => opt.value === String(formData.kpiId),
+                  ) || null
+                }
+                onChange={(val) => setFormData({ kpiId: Number(val.value) })}
+                isDisabled={mode}
+              />
               <SingleSelect
                 label="KPI (Rencana Tindakan)"
                 placeholder="Pilih KPI"
                 options={kpiOptions}
-                value={kpiOptions.find((opt) => opt.value === String(formData.kpiId)) || null}
+                value={
+                  kpiOptions.find(
+                    (opt) => opt.value === String(formData.kpiId),
+                  ) || null
+                }
+                onChange={(val) => setFormData({ kpiId: Number(val.value) })}
+                isDisabled={mode}
+              />
+              {/* SingleSelect Pegawai */}
+              <SingleSelect
+                label="Ditujukan Kepada"
+                placeholder="Pilih Pegawai"
+                options={kpiOptions}
+                value={
+                  kpiOptions.find(
+                    (opt) => opt.value === String(formData.kpiId),
+                  ) || null
+                }
                 onChange={(val) => setFormData({ kpiId: Number(val.value) })}
                 isDisabled={mode}
               />
@@ -277,7 +281,9 @@ export default function MasterFormModal({
           <div className="bg-grey-100 rounded-lg border-2 p-4">
             <div className="bg-white rounded-lg overflow-hidden">
               <div className="flex p-4 justify-between items-center">
-                <h3 className="text-2xl font-semibold">List Field Form Work Order</h3>
+                <h3 className="text-2xl font-semibold">
+                  List Field Form Work Order
+                </h3>
                 <button
                   aria-label="Preview form"
                   title="Preview form"

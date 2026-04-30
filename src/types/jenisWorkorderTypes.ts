@@ -7,7 +7,7 @@ export interface DetailForm {
   namaParent?: string | null;
 };
 
-// FormWorkorder adalah form field dengan kpi_id (dulunya DetailForm)
+// FormWorkorder adalah form field dengan kpi_id
 export interface FormWorkorder {
   id: number;
   jenisWorkorderId: number;

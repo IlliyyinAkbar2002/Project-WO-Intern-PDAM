@@ -26,7 +26,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body suppressHydrationWarning className={`${robotoCondensed.variable} antialiased`}>
+      <head>
+        <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.46.0/dist/apexcharts.min.js"></script>
+      </head>
+      <body
+        suppressHydrationWarning
+        className={`${robotoCondensed.variable} antialiased`}
+      >
         <Toaster richColors position="bottom-right" />
         {children}
       </body>

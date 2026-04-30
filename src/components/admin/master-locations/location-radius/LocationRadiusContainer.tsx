@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { Button, Input } from "@/components/ui";
 import SingleSelect from "@/components/shared/fields/SingleSelect";
 import { updateLocationById } from "@/services/masterLocationService";
 import { MasterLocation } from "@/types/masterLocationTypes";
 import { toast } from "sonner";
+import { LatLngTuple } from "leaflet";
 
 const MapField = dynamic(() => import("@/components/shared/fields/MapField"), {
   ssr: false,
@@ -25,61 +26,79 @@ export default function LocationRadiusContainer({
         value: String(item.id),
         label: `${item.nama} (${item.radiusMeter} meter)`,
       })),
-    [locations]
+    [locations],
   );
 
   const [selectedId, setSelectedId] = useState<number>(
-    locations.length ? locations[0].id : 0
+    locations.length ? locations[0].id : 0,
   );
+
   const selectedLocation = locations.find((l) => l.id === selectedId) || null;
 
   const [radius, setRadius] = useState<number>(
-    selectedLocation?.radiusMeter || 0
-  );
-  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(
-    selectedLocation
-      ? { lat: selectedLocation.latitude, lng: selectedLocation.longitude }
-      : null
+    selectedLocation?.radiusMeter || 0,
   );
 
-  // Sync coords when selectedId changes
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(
+    selectedLocation
+      ? {
+          lat: selectedLocation.latitude,
+          lng: selectedLocation.longitude,
+        }
+      : null,
+  );
+
+  // ✅ Sync ketika location berubah
   useEffect(() => {
     const loc = locations.find((l) => l.id === selectedId);
     if (loc) {
       setRadius(loc.radiusMeter);
-      setCoords({ lat: loc.latitude, lng: loc.longitude });
+      setCoords({
+        lat: loc.latitude,
+        lng: loc.longitude,
+      });
     }
   }, [selectedId, locations]);
 
-  const handleLocationSelect = (lat: number, lng: number) => {
-    setCoords({ lat, lng });
-  };
+  // ✅ FIX: stabilkan callback + hindari update sama
+  const handleLocationSelect = useCallback((lat: number, lng: number) => {
+    setCoords((prev) => {
+      if (prev?.lat === lat && prev?.lng === lng) {
+        return prev;
+      }
+      return { lat, lng };
+    });
+  }, []);
 
   const handleChangeLocation = (option: { value: string; label: string }) => {
     const id = Number(option.value);
     setSelectedId(id);
   };
 
+  // ✅ FIX: stabilkan initialPosition (biar tidak infinite loop)
+  const initialPosition = useMemo<LatLngTuple>(() => {
+    return coords 
+    ? [coords.lat, coords.lng] 
+    : [-7.265437, 112.754072];
+  }, [coords?.lat, coords?.lng]);
+
   const handleSubmit = async () => {
     if (!selectedId || !radius || !coords) {
       toast.error("Pastikan semua field terisi.");
       return;
     }
+
     try {
-      console.log("Saving location:", {
-        id: selectedId,
-        radius,
-        coords,
-      });
       await updateLocationById(String(selectedId), {
         radiusMeter: radius,
         latitude: coords.lat,
         longitude: coords.lng,
       });
+
       toast.success("Data Lokasi berhasil diperbarui.");
     } catch (e) {
       console.error("Error updating location:", e);
-      toast.error("Gagal memperbarui data lokasi. Silakan coba lagi.");
+      toast.error("Gagal memperbarui data lokasi.");
     }
   };
 
@@ -87,14 +106,14 @@ export default function LocationRadiusContainer({
     <div className="flex max-h-full gap-5 px-10 py-6">
       <div className="flex-[2] bg-white rounded-xl p-4 space-y-4">
         <h2 className="text-2xl font-semibold">Area Radius Lokasi</h2>
+
         <MapField
           onLocationSelect={handleLocationSelect}
           radius={radius}
-          initialPosition={
-            coords ? [coords.lat, coords.lng] : [-7.265437, 112.754072]
-          }
+          initialPosition={initialPosition}
           height={420}
         />
+
         {coords && (
           <div className="mt-2 flex justify-end space-x-3 text-sm font-medium text-gray-400">
             <p>Long {coords.lng.toFixed(6)}</p>
@@ -104,7 +123,10 @@ export default function LocationRadiusContainer({
       </div>
 
       <div className="flex-[1] bg-white rounded-xl p-4 space-y-6">
-        <h2 className="text-2xl font-semibold text-center">Ubah Radius Lokasi</h2>
+        <h2 className="text-2xl font-semibold text-center">
+          Ubah Radius Lokasi
+        </h2>
+
         <form
           className="space-y-5"
           onSubmit={(e) => {
@@ -116,11 +138,13 @@ export default function LocationRadiusContainer({
             label="Nama Lokasi"
             placeholder="Pilih Nama Lokasi"
             value={
-              locationOptions.find((o) => o.value === String(selectedId)) || null
+              locationOptions.find((o) => o.value === String(selectedId)) ||
+              null
             }
             onChange={handleChangeLocation as any}
             options={locationOptions}
           />
+
           <Input
             label="Radius (meter)"
             type="number"
@@ -128,6 +152,7 @@ export default function LocationRadiusContainer({
             value={radius}
             onChange={(e) => setRadius(Number(e.target.value))}
           />
+
           <Button variant={"primary"} type="submit">
             Simpan
           </Button>

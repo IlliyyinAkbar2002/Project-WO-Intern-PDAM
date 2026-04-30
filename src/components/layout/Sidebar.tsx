@@ -11,6 +11,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
+  AddressBookIcon,
   ClockCounterClockwiseIcon,
   HammerIcon,
   HardHatIcon,
@@ -49,6 +50,11 @@ const menuItems: Record<"admin" | "user", MenuItem[]> = {
       href: baseAdminPath,
     },
     {
+      title: "List Pengaduan",
+      icon: <AddressBookIcon size={24} className="text-primary-500" />,
+      href: `${baseAdminPath}/pengaduan`,
+    },
+    {
       title: "Master Pegawai",
       icon: <User size={24} className="text-primary-500" />,
       subMenu: [
@@ -76,7 +82,7 @@ const menuItems: Record<"admin" | "user", MenuItem[]> = {
           href: `${baseAdminPath}/master-workorders/workorder-categories`,
         },
         {
-          label: "Parameter Workorder",
+          label: "Approve Workorder",
           href: `${baseAdminPath}/master-workorders/workorder-categories`,
         },
       ],
@@ -96,8 +102,12 @@ const menuItems: Record<"admin" | "user", MenuItem[]> = {
       icon: <HammerIcon size={24} className="text-primary-500" />,
       subMenu: [
         {
-          label: "Jenis Material",
-          href: `${baseAdminPath}/master-locations/location-radius`,
+          label: "Data Material",
+          href: `${baseAdminPath}/master-materials/material-data`,
+        },
+        {
+          label: "Log Penggunaan Material",
+          href: `${baseAdminPath}/master-materials/material-`,
         },
       ],
     },
