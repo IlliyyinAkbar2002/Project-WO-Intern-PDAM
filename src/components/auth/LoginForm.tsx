@@ -36,12 +36,14 @@ export default function LoginForm() {
     setEmailError("");
     setPasswordError("");
 
+    // validasi email
     if (!validateEmail(email)) {
       setEmailError("Format email tidak valid.");
       setIsLoading(false);
       return;
     }
 
+    // validasi password
     if (password.length < 8) {
       setPasswordError("Kata sandi harus minimal 8 karakter.");
       setIsLoading(false);
@@ -66,60 +68,58 @@ export default function LoginForm() {
         fullResponse: res.data,
       });
 
-      // 2. ambil token & role dari response backend
-      // Try different possible token field names
-      const token = res.data.access_token || res.data.token;
-      const userData = res.data.user || res.data;
+      // Ambil token
+      const token = res.data.access_token;
 
-      // Try different possible role field names
-      const roleId = userData?.role_id || userData?.role?.id || userData?.role;
+      // Ambil data user
+      const userData = res.data.user;
 
       if (!token) {
-        throw new Error(
-          `Token tidak ditemukan di response. Available fields: ${Object.keys(
-            res.data
-          ).join(", ")}`
-        );
+        throw new Error("Token tidak ditemukan");
       }
 
-      if (!roleId) {
-        throw new Error(
-          `Role tidak ditemukan di response. User data: ${JSON.stringify(
-            userData
-          )}`
-        );
+      if (!userData) {
+        throw new Error("User data tidak ditemukan");
       }
 
-      // 3. simpan ke cookie agar bisa diakses di server component
-      Cookies.set("token", token, { expires: 1 }); // 1 hari
-      Cookies.set("role", String(roleId), { expires: 7 });
+      // Ambil role
+      const roleName = userData.role_name?.toLowerCase() ?? "";
 
-      // 4. set header default axios (optional, kalau mau auto-auth setelah login)
-      // api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      const roleId = userData.role_id;
 
-      // 5. ambil data user (karena token sudah tersimpan, otomatis keikut di header Authorization)
-      // const me = await api.get("/me");
-      // const user = me.data;
+      const userName = userData.name;
 
-      // 6. redirect sesuai role
-      const numericRoleId =
-        typeof roleId === "string" ? parseInt(roleId) : roleId;
-      if (numericRoleId === 1) {
+      // Simpan cookies
+      Cookies.set("token", token, {
+        expires: 1,
+        path: "/",
+      });
+
+      Cookies.set("role", String(roleId), {
+        expires: 1,
+        path: "/",
+      });
+
+      Cookies.set("role_name", roleName, {
+        expires: 1,
+        path: "/",
+      });
+
+      Cookies.set("user_name", userName, {
+        expires: 1,
+        path: "/",
+      });
+
+      // Redirect berdasarkan role
+      if (roleName === "superadmin") {
+        router.push("/protected/super-admin");
+      } else if (roleName === "admin") {
         router.push("/protected/admin");
-      } else if (numericRoleId === 2) {
-        router.push("/protected/user");
+      } else if (roleName === "manager") {
+        router.push("/protected/manager");
       } else {
         setError("Role tidak dikenali");
       }
-    } catch (err: any) {
-      if (err.response) {
-        console.error("Login error response:", err.response.data);
-      } else if (err.request) {
-        console.error("Login error request:", err.request);
-      } else {
-        console.error("Login error message:", err.message);
-      }
-      setError("Login gagal. Periksa email dan password.");
     } finally {
       setIsLoading(false);
     }

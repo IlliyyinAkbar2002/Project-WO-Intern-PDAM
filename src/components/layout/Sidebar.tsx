@@ -14,10 +14,7 @@ import {
   AddressBookIcon,
   ClockCounterClockwiseIcon,
   HammerIcon,
-  HardHatIcon,
   MapPinAreaIcon,
-  PersonIcon,
-  PersonSimpleIcon,
   PulseIcon,
   SignOutIcon,
   ToolboxIcon,
@@ -29,7 +26,8 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 
 interface SidebarProps {
-  role: "admin" | "user";
+  role: string;
+  departement?: string;
 }
 
 interface MenuItem {
@@ -39,20 +37,22 @@ interface MenuItem {
   subMenu?: { label: string; href: string }[];
 }
 
-const baseUserPath = "/protected/user";
+const baseSuperAdminPath = "/protected/super-admin";
 const baseAdminPath = "/protected/admin";
+const baseManagerPath = "/protected/manager";
 
-const menuItems: Record<"admin" | "user", MenuItem[]> = {
-  admin: [
+const menuItems: Record<string, MenuItem[]> = {
+  // role superadmin
+  superadmin: [
     {
       title: "Dashboard",
       icon: <PulseIcon size={24} className="text-primary-500" />,
-      href: baseAdminPath,
+      href: baseSuperAdminPath,
     },
     {
       title: "List Pengaduan",
       icon: <AddressBookIcon size={24} className="text-primary-500" />,
-      href: `${baseAdminPath}/pengaduan`,
+      href: `${baseSuperAdminPath}/pengaduan`,
     },
     {
       title: "Master Pegawai",
@@ -60,9 +60,9 @@ const menuItems: Record<"admin" | "user", MenuItem[]> = {
       subMenu: [
         {
           label: "Data Pegawai",
-          href: `${baseAdminPath}/master-pegawai/employee-data`,
+          href: `${baseSuperAdminPath}/master-pegawai/employee-data`,
         },
-        { label: "Monitoring", href: "/admin/master-formulir/monitoring" },
+        { label: "Monitoring", href: `${baseSuperAdminPath}/master-formulir/monitoring` },
       ],
     },
     {
@@ -71,19 +71,19 @@ const menuItems: Record<"admin" | "user", MenuItem[]> = {
       subMenu: [
         {
           label: "Jenis Workorder",
-          href: `${baseAdminPath}/master-workorders/workorder-categories`,
+          href: `${baseSuperAdminPath}/master-workorders/workorder-categories`,
         },
         {
           label: "List Workorder",
-          href: `${baseAdminPath}/master-workorders/workorder-categories`,
+          href: `${baseSuperAdminPath}/master-workorders/workorder-categories`,
         },
         {
           label: "History Workorder",
-          href: `${baseAdminPath}/master-workorders/workorder-categories`,
+          href: `${baseSuperAdminPath}/master-workorders/workorder-categories`,
         },
         {
           label: "Approve Workorder",
-          href: `${baseAdminPath}/master-workorders/workorder-categories`,
+          href: `${baseSuperAdminPath}/master-workorders/workorder-categories`,
         },
       ],
     },
@@ -93,7 +93,7 @@ const menuItems: Record<"admin" | "user", MenuItem[]> = {
       subMenu: [
         {
           label: "Radius Lokasi",
-          href: `${baseAdminPath}/master-locations/location-radius`,
+          href: `${baseSuperAdminPath}/master-locations/location-radius`,
         },
       ],
     },
@@ -103,27 +103,34 @@ const menuItems: Record<"admin" | "user", MenuItem[]> = {
       subMenu: [
         {
           label: "Data Material",
-          href: `${baseAdminPath}/master-materials/material-data`,
+          href: `${baseSuperAdminPath}/master-materials/material-data`,
         },
         {
           label: "Log Penggunaan Material",
-          href: `${baseAdminPath}/master-materials/material-`,
+          href: `${baseSuperAdminPath}/master-materials/material-`,
         },
       ],
     },
   ],
-  user: [
+  // role admin
+  admin: [
     {
       title: "Dashboard",
       icon: <PulseIcon size={24} className="text-primary-500" />,
-      href: baseUserPath,
+      href: baseAdminPath,
     },
     {
       title: "Buat Workorder",
       icon: <ToolboxIcon size={24} className="text-primary-500" />,
       subMenu: [
-        { label: "Normal", href: `${baseUserPath}/workorders/normal/create` },
-        { label: "Lembur", href: `${baseUserPath}/workorders/lembur/create` },
+        {
+          label: "Normal",
+          href: `${baseAdminPath}/workorders/normal/create`,
+        },
+        {
+          label: "Lembur",
+          href: `${baseAdminPath}/workorders/lembur/create`,
+        },
       ],
     },
     {
@@ -132,8 +139,57 @@ const menuItems: Record<"admin" | "user", MenuItem[]> = {
         <ClockCounterClockwiseIcon size={24} className="text-primary-500" />
       ),
       subMenu: [
-        { label: "Normal", href: `${baseUserPath}/history/normal` },
-        { label: "Lembur", href: `${baseUserPath}/history/lembur` },
+        { label: "Normal", href: `${baseAdminPath}/history/normal` },
+        { label: "Lembur", href: `${baseAdminPath}/history/lembur` },
+      ],
+    },
+  ],
+  // role manager
+  manager: [
+    {
+      title: "Dashboard",
+      icon: <PulseIcon size={24} className="text-primary-500" />,
+      href: baseManagerPath,
+    },
+    {
+      title: "List Pengaduan",
+      icon: <AddressBookIcon size={24} className="text-primary-500" />,
+      href: `${baseManagerPath}/pengaduan`,
+    },
+    {
+      title: "Master Workorder",
+      icon: <ToolboxIcon size={24} className="text-primary-500" />,
+      subMenu: [
+        {
+          label: "Jenis Workorder",
+          href: `${baseManagerPath}/master-workorders/workorder-categories`,
+        },
+        {
+          label: "List Workorder",
+          href: `${baseManagerPath}/master-workorders/workorder-categories`,
+        },
+        {
+          label: "History Workorder",
+          href: `${baseManagerPath}/master-workorders/workorder-categories`,
+        },
+        {
+          label: "Approve Workorder",
+          href: `${baseManagerPath}/master-workorders/workorder-categories`,
+        },
+      ],
+    },
+    {
+      title: "Master Material",
+      icon: <HammerIcon size={24} className="text-primary-500" />,
+      subMenu: [
+        {
+          label: "Data Material",
+          href: `${baseManagerPath}/master-materials/material-data`,
+        },
+        {
+          label: "Log Penggunaan Material",
+          href: `${baseManagerPath}/master-materials/material-`,
+        },
       ],
     },
   ],

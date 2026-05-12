@@ -29,6 +29,8 @@ export interface JenisWorkorder {
   id: number;
   nama: string;
   kpiId: number; // kpiId di root level
+  pegawaiId?: number | null; // ditujukan kepada (pegawai)
+  pengaduanId?: string | null; // parameter pengaduan
   formWorkorder: FormWorkorder[]; // dulunya detailForm
 }
 
@@ -36,6 +38,8 @@ export interface JenisWorkorderPayload {
   id?: number;
   nama: string;
   kpiId?: number; // kpiId di root level
+  pegawaiId?: number | null;
+  pengaduanId?: string | null;
   formWorkorder?: FormWorkorder[]; // dulunya detailForm
 }
 

@@ -1,0 +1,361 @@
+"use client";
+
+import SingleSelect from "@/components/shared/fields/SingleSelect";
+import { DraggableTable } from "@/components/shared/tables/DraggableTable";
+import { columns } from "./columns";
+import { useEffect, useRef, useState } from "react";
+import { FileMagnifyingGlassIcon, XIcon } from "@phosphor-icons/react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useJenisWorkorderStore } from "../../useJenisWorkorderStore";
+import { FormWorkorder } from "@/types/jenisWorkorderTypes";
+import { useKpi } from "@/hooks/useKpi";
+import { useJenisWorkorderOptions } from "@/hooks/useJenisWorkorderOptions";
+import DetailFormModal from "../detail-form-modal/DetailFormModal";
+import { toast } from "sonner";
+import PreviewFormModal from "../PreviewFormModal";
+import {
+  createJenisWorkorder,
+  getJenisWorkorderById,
+  updateJenisWorkorder,
+} from "@/services";
+import { getPegawai } from "@/services/pegawaiService";
+import { getPengaduan } from "@/services/pengaduanService";
+import { Button } from "@/components/ui";
+
+interface MasterFormModalProps {
+  modal: string;
+  id?: string | null;
+  onClose: () => void;
+}
+
+export default function MasterFormModal({
+  modal,
+  id,
+  onClose,
+}: MasterFormModalProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const submodal = searchParams.get("submodal");
+  const mode = modal === "detail";
+
+  const openSubModal = (modal: string, id?: number) => {
+    const params = new URLSearchParams(searchParams);
+    params.set("submodal", modal);
+    if (id) params.set("submodal_id", id.toString());
+    router.push(`?${params.toString()}`, { scroll: false });
+  };
+
+  const closeSubModal = () => {
+    const params = new URLSearchParams(searchParams);
+    params.delete("submodal");
+    params.delete("submodal_id");
+    router.replace(`?${params.toString()}`, { scroll: false });
+  };
+
+  const {
+    formData,
+    setFormData,
+    setAllFormData,
+    addFormWorkorder,
+    updateFormWorkorder,
+    removeFormWorkorder,
+  } = useJenisWorkorderStore();
+
+  // Handler untuk update order formWorkorder (drag-and-drop)
+  const updateFormWorkorderOrder = (newOrder: FormWorkorder[]) => {
+    setFormData({ formWorkorder: newOrder });
+  };
+
+  const hasFetchedRef = useRef(false);
+  useEffect(() => {
+    const fetchData = async () => {
+      if (hasFetchedRef.current) return;
+      hasFetchedRef.current = true;
+
+      if ((modal === "edit" || modal === "detail") && id) {
+        try {
+          const response = await getJenisWorkorderById(Number(id));
+          setAllFormData(response);
+        } catch (error) {
+          toast.error("Gagal mengambil data!");
+        }
+      } else if (modal === "create") {
+        addFormWorkorder(formData.id);
+      }
+    };
+
+    fetchData();
+  }, [modal, id, setAllFormData]);
+
+  const kpiData = useKpi();
+  const kpiOptions = kpiData.data.map((item) => ({
+    value: String(item.id),
+    label: item.nama,
+  }));
+
+  const [pegawaiOptions, setPegawaiOptions] = useState<{ value: string; label: string }[]>([]);
+  const [pengaduanOptions, setPengaduanOptions] = useState<{ value: string; label: string }[]>([]);
+
+  useEffect(() => {
+    const fetchPegawaiAndPengaduan = async () => {
+      try {
+        const pegawaiResp = await getPegawai(1, 1000, "", "");
+        const pOptions = pegawaiResp.data.map((p) => ({ value: String(p.pegawai.id), label: p.pegawai.nama }));
+        setPegawaiOptions(pOptions);
+      } catch (e) {
+        // Ignore; leave empty options
+      }
+
+      try {
+        const pengaduanResp = await getPengaduan({ page: 1, search: "", sort: "desc" });
+        const pengOptions = (pengaduanResp.data || pengaduanResp).map((pd) => ({
+          value: String(pd.kode_pengaduan),
+          label: `${pd.kode_pengaduan} - ${pd.judul}`,
+        }));
+        setPengaduanOptions(pengOptions);
+      } catch (e) {
+        
+      }
+    };
+
+    fetchPegawaiAndPengaduan();
+  }, []);
+
+  // Jenis Workorder dropdown options
+  const jenisWorkorderData = useJenisWorkorderOptions();
+  const jenisWorkorderOptions = jenisWorkorderData.data.map((item) => ({
+    value: String(item.id),
+    label: item.nama,
+  }));
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleAddRow = () => {
+    if (
+      !formData.formWorkorder.every(
+        (form: FormWorkorder) => form.namaField !== "",
+      )
+    ) {
+      toast.error("Isi Nama Field terlebih dahulu");
+      return;
+    }
+    addFormWorkorder(formData.id);
+  };
+
+  const handleDeleteRow = async (id: number) => {
+    const data = formData.formWorkorder.find(
+      (item: FormWorkorder) => item.id === id,
+    );
+    if (!data) {
+      toast.error("Data tidak ditemukan!");
+      return;
+    }
+    const isSingleRow = formData.formWorkorder.length === 1;
+    const hasValue = data.namaField.trim() !== "";
+    if (isSingleRow && hasValue) {
+      updateFormWorkorder(formData.id, id, {
+        ...data,
+        namaField: "",
+        tipeField: "",
+        tipeData: "",
+        sifat: "",
+        min: null,
+        max: null,
+        parent: null,
+        keterangan: null,
+        order: 0,
+        kpiId: 0,
+        detailForm: [],
+      });
+      toast.success("Data berhasil dihapus!");
+    } else if (!isSingleRow) {
+      removeFormWorkorder(formData.id, id);
+      if (hasValue) toast.success("Data berhasil dihapus!");
+    }
+  };
+
+  const handleSubmitRow = (id: number, value: string) => {
+    if (!formData.nama.trim()) {
+      toast.error("Isi Nama Workorder terlebih dahulu!");
+      return;
+    }
+    if (!value.trim()) {
+      toast.error("Isi Nama Field terlebih dahulu!");
+      return;
+    }
+    const existingForm = formData.formWorkorder.find(
+      (item: FormWorkorder) => item.id === id,
+    );
+    if (existingForm) {
+      updateFormWorkorder(formData.id, id, {
+        ...existingForm,
+        namaField: value,
+      });
+    }
+    toast.success("Data berhasil ditambahkan!");
+  };
+
+  const handleSubmit = async () => {
+    if (
+      !formData.nama.trim() ||
+      !formData.kpiId ||
+      formData.kpiId <= 0 ||
+      !formData.formWorkorder.every(
+        (form: FormWorkorder) =>
+          form.namaField !== "" && form.tipeField !== "" && form.kpiId > 0,
+      )
+    ) {
+      toast.error("Isi semua field terlebih dahulu, termasuk KPI!");
+      return;
+    }
+    try {
+      setIsSubmitting(true);
+      if (formData.id > 0) {
+        await updateJenisWorkorder(formData.id, formData);
+        toast.success("Data berhasil diperbarui!");
+      } else {
+        await createJenisWorkorder(formData);
+        toast.success("Data berhasil ditambahkan!");
+      }
+      router.refresh();
+      onClose();
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      toast.error("Gagal menyimpan data!");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 px-80">
+      <div className="bg-white rounded-lg overflow-hidden w-full">
+        <div className="flex bg-primary-500 justify-between items-center px-6 py-2">
+          <h2 className="text-3xl font-semibold text-center text-white">
+            {modal === "create"
+              ? "Buat"
+              : modal === "detail"
+                ? "Detail"
+                : "Edit"}{" "}
+            Form Work Order
+          </h2>
+          <button
+            aria-label="Close"
+            title="Close"
+            className="hover:bg-grey-600 rounded-full p-1"
+            onClick={onClose}
+          >
+            <XIcon className="text-white" size={20} />
+          </button>
+        </div>
+        <div className="p-6 space-y-4">
+          <div className="rounded-lg border-2 p-4 bg-grey-100 space-y-2">
+            <h3 className="text-2xl font-semibold">Form Work Order</h3>
+            <div className="grid grid-cols-2 gap-8">
+              <div className="flex items-end gap-2">
+                <div className="flex-1">
+                  <SingleSelect
+                    label="Jenis Work Order"
+                    placeholder="Pilih jenis work order"
+                    options={jenisWorkorderOptions}
+                    value={
+                      jenisWorkorderOptions.find(
+                        (opt) => opt.label === formData.nama,
+                      ) || null
+                    }
+                    onChange={(val) => setFormData({ nama: val.label })}
+                    isDisabled={mode}
+                  />
+                </div>
+              </div>
+              {/* SingleSelect Pengaduan */}
+              <SingleSelect
+                label="Parameter Pengaduan"
+                placeholder="Pilih Pengaduan"
+                options={pengaduanOptions}
+                value={
+                  pengaduanOptions.find((opt) => opt.value === String(formData.pengaduanId)) || null
+                }
+                onChange={(val) => setFormData({ pengaduanId: val.value })}
+                isDisabled={mode}
+              />
+              {/* SingleSelect KPI */}
+              <SingleSelect
+                label="KPI (Rencana Tindakan)"
+                placeholder="Pilih KPI"
+                options={kpiOptions}
+                value={
+                  kpiOptions.find(
+                    (opt) => opt.value === String(formData.kpiId),
+                  ) || null
+                }
+                onChange={(val) => setFormData({ kpiId: Number(val.value) })}
+                isDisabled={mode}
+              />
+              {/* SingleSelect Pegawai */}
+              <SingleSelect
+                label="Ditujukan Kepada"
+                placeholder="Pilih Pegawai"
+                options={pegawaiOptions}
+                value={
+                  pegawaiOptions.find((opt) => opt.value === String(formData.pegawaiId)) || null
+                }
+                onChange={(val) => setFormData({ pegawaiId: Number(val.value) })}
+                isDisabled={mode}
+              />
+            </div>
+          </div>
+          <div className="bg-grey-100 rounded-lg border-2 p-4">
+            <div className="bg-white rounded-lg overflow-hidden">
+              <div className="flex p-4 justify-between items-center">
+                <h3 className="text-2xl font-semibold">
+                  List Field Form Work Order
+                </h3>
+                <button
+                  aria-label="Preview form"
+                  title="Preview form"
+                  onClick={() => openSubModal("preview")}
+                >
+                  <FileMagnifyingGlassIcon
+                    className="text-primary-500 hover:text-primary-400"
+                    size={28}
+                  />
+                </button>
+              </div>
+              <div className="overflow-auto max-h-[235px]">
+                <DraggableTable
+                  columns={columns({
+                    openSubModal,
+                    handleDeleteRow,
+                    handleSubmitRow,
+                    handleAddRow,
+                    mode,
+                  })}
+                  data={formData.formWorkorder}
+                  setData={updateFormWorkorderOrder}
+                  isDraggable={!mode}
+                />
+              </div>
+            </div>
+          </div>
+          {!mode && (
+            <div className="flex justify-end">
+              <Button
+                variant="primary"
+                size="md"
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Menyimpan..." : "Simpan"}
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+      {submodal === "preview" && <PreviewFormModal onClose={closeSubModal} />}
+      {submodal === "detail" && <DetailFormModal onClose={closeSubModal} />}
+      {submodal === "edit" && <DetailFormModal onClose={closeSubModal} />}
+      {submodal === "create" && <DetailFormModal onClose={closeSubModal} />}
+    </div>
+  );
+}
