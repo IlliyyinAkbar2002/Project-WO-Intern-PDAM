@@ -1,6 +1,9 @@
+import { KategoriWorkorder } from "@/types";
+
 export interface OptionType {
   value: string;
   label: string;
+  kategori?: KategoriWorkorder | null;
 }
 
 export const tipeFieldOptions: OptionType[] = [

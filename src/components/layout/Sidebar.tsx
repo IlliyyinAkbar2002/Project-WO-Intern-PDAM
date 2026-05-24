@@ -75,7 +75,7 @@ const menuItems: Record<string, MenuItem[]> = {
         },
         {
           label: "List Workorder",
-          href: `${baseSuperAdminPath}/master-workorders/workorder-categories`,
+          href: `${baseSuperAdminPath}/master-workorders/workorder`,
         },
         {
           label: "History Workorder",

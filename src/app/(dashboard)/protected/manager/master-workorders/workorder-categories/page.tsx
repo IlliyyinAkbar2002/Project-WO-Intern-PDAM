@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { getJenisWorkorders } from "@/services/jenisWorkorderService";
-import WorkorderCategoriesContainer from "@/components/super-admin/master-workorders/workorder-categories/WorkorderCategoriesContainer";
+import WorkorderCategoriesContainer from "@/components/super-admin/master-workorders/jenis-workorder/JenisWorkorderContainer";
 import { JenisWorkorderResponse } from "@/types/jenisWorkorderTypes";
 
 export default function WorkorderCategoriesPage() {
