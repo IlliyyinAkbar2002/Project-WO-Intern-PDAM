@@ -1,6 +1,5 @@
 import { User } from "./userTypes";
 import { KategoriWorkorder } from "./jenisWorkorderTypes";
-
 export interface SimpleEntity {
   id: number;
   nama: string;
@@ -9,24 +8,19 @@ export interface SimpleEntity {
 
 export type PrioritasWorkorder = "Rendah" | "Sedang" | "Tinggi" | "Urgent";
 
-export type StatusWorkorder =
-  | "Open"
-  | "Progress"
-  | "Pending"
-  | "Done"
-  | "Cancel";
+export type StatusWorkorder = "Pending" | "Proses" | "Selesai" | "Ditolak";
 
 export interface WorkorderBase {
   namaWorkorder: string;
   deskripsi?: string | null;
-  lokasi?: string | null;
+  lokasi: string;
   prioritas: PrioritasWorkorder;
   status: StatusWorkorder;
-  kodePengaduan?: string | null;
+  kodePengaduan: string;
   departemenId: number;
   jenisWorkorderId: number;
-  picId: number;
-  userId: number;
+  assignedTo: number;
+  createdBy: number;
 }
 
 export interface Workorder extends WorkorderBase {
@@ -34,9 +28,9 @@ export interface Workorder extends WorkorderBase {
   createdAt?: string;
   updatedAt?: string;
   kategori?: KategoriWorkorder | null;
-  // relations
-  pic?: User;
-  user?: User;
+  assignedToUser?: User;
+  assignedToName?: string;
+  createdByUser?: User;
   jenisWorkorder?: SimpleEntity;
   departemen?: SimpleEntity;
 }

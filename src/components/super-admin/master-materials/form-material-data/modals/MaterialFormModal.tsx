@@ -66,7 +66,7 @@ export default function MaterialFormModal({ onClose }: MaterialFormModalProps) {
       toast.success("Material berhasil ditambahkan");
       // Close or navigate back to list
       if (onClose) onClose();
-      else router.push("/protected/admin/master-materials/material-data");
+      else router.push("/protected/super-admin/master-materials/material-data");
       router.refresh();
     } catch (error) {
       toast.error("Gagal menyimpan data material");

@@ -8,7 +8,7 @@ import { Pagination } from "@/components/shared/tables/Pagination";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui";
 import { columns } from "./columns";
-import JenisWorkorderModal from "../modals/master-form-modal/WorkorderModal";
+import WorkorderModal from "../modals/master-form-modal/WorkorderModal";
 import WorkorderDetailModal from "../modals/detail-form-modal/WorkorderDetailModal";
 import { Workorder } from "@/types/workorderTypes";
 
@@ -37,6 +37,15 @@ export default function WorkorderContainer({
   // =========================================================
   const modal = searchParams.get("modal") as ModalType;
   const modalId = searchParams.get("modal_id");
+
+  /**
+   * Persiapan flow:
+   * Pengaduan → Create Workorder
+   *
+   * contoh:
+   * ?modal=create&kode_pengaduan=PGD-001
+   */
+  const kodePengaduan = searchParams.get("kode_pengaduan");
 
   // =========================================================
   // LOCAL STATE
@@ -78,6 +87,7 @@ export default function WorkorderContainer({
 
     params.delete("modal");
     params.delete("modal_id");
+    params.delete("kode_pengaduan");
     router.replace(`?${params.toString()}`, {
       scroll: false,
     });
@@ -85,13 +95,15 @@ export default function WorkorderContainer({
   };
 
   // =========================================================
-  // HANDLE SEARCH
+  // REALTIME SEARCH
   // =========================================================
-  const handleSearch = () => {
+  const handleSearchChange = (value: string) => {
+    setSearchText(value);
+
     const params = new URLSearchParams(searchParams.toString());
 
-    if (searchText.trim()) {
-      params.set("search", searchText.trim());
+    if (value.trim()) {
+      params.set("search", value);
     } else {
       params.delete("search");
     }
@@ -104,6 +116,7 @@ export default function WorkorderContainer({
   // =========================================================
   const handlePageChange = (page: number) => {
     const params = new URLSearchParams(searchParams.toString());
+
     params.set("page", String(page));
     router.push(`?${params.toString()}`);
   };
@@ -115,13 +128,13 @@ export default function WorkorderContainer({
       {/* ===================================================== */}
       <div className="flex items-center justify-between p-4">
         <h2 className="text-3xl font-semibold">Data Workorder</h2>
+
         <div className="flex items-center gap-4">
           {/* SEARCH */}
           <Input
             placeholder="Pencarian..."
             value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            onChange={(e) => handleSearchChange(e.target.value)}
           />
 
           {/* PAGINATION */}
@@ -131,7 +144,7 @@ export default function WorkorderContainer({
             onPageChange={handlePageChange}
           />
 
-          {/* BUTTON */}
+          {/* FLOW A: MANUAL CREATE */}
           <Button
             variant="primary"
             size="sm"
@@ -160,7 +173,12 @@ export default function WorkorderContainer({
       {/* CREATE / EDIT MODAL */}
       {/* ===================================================== */}
       {(modal === "create" || modal === "edit") && (
-        <JenisWorkorderModal modal={modal} id={modalId} onClose={closeModal} />
+        <WorkorderModal
+          modal={modal}
+          id={modalId}
+          kodePengaduan={kodePengaduan}
+          onClose={closeModal}
+        />
       )}
 
       {/* ===================================================== */}

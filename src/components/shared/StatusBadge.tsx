@@ -1,6 +1,12 @@
 import { Badge, BadgeProps } from "../ui";
 
-const statusVariant: Record<number, BadgeProps["variant"]> = {
+/**
+ * SUPPORT:
+ * - legacy system: statusId (number)
+ * - new system: status string (pengaduan/workorder)
+ */
+
+const statusVariantById: Record<number, BadgeProps["variant"]> = {
   1: "warning",
   2: "success",
   3: "warning",
@@ -11,7 +17,7 @@ const statusVariant: Record<number, BadgeProps["variant"]> = {
   8: "outline",
 };
 
-const statusLabel: Record<number, string> = {
+const statusLabelById: Record<number, string> = {
   1: "Belum disetujui",
   2: "Disetujui",
   3: "Revisi",
@@ -22,13 +28,40 @@ const statusLabel: Record<number, string> = {
   8: "Ditunda",
 };
 
+/**
+ * NEW SYSTEM (Pengaduan & Workorder)
+ */
+const statusVariantByString: Record<string, BadgeProps["variant"]> = {
+  Pending: "warning",
+  Proses: "info",
+  Selesai: "success",
+  Ditolak: "danger",
+};
+
+const statusLabelByString: Record<string, string> = {
+  Pending: "Pending",
+  Proses: "Proses",
+  Selesai: "Selesai",
+  Ditolak: "Ditolak",
+};
+
 interface StatusBadgeProps {
-  statusId: number;
+  statusId?: number;
+  status?: string;
 }
 
-export default function StatusBadge({ statusId }: StatusBadgeProps) {
-  const variant = statusVariant[statusId] ?? "info";
-  const label = statusLabel[statusId] ?? "Tidak Diketahui";
+export default function StatusBadge({ statusId, status }: StatusBadgeProps) {
+  // PRIORITY: string status (new system)
+  if (status) {
+    const variant = statusVariantByString[status] ?? "info";
+    const label = statusLabelByString[status] ?? "Tidak Diketahui";
+
+    return <Badge variant={variant}>{label}</Badge>;
+  }
+
+  // fallback legacy system
+  const variant = statusId ? statusVariantById[statusId] : "info";
+  const label = statusId ? statusLabelById[statusId] : "Tidak Diketahui";
 
   return <Badge variant={variant}>{label}</Badge>;
 }

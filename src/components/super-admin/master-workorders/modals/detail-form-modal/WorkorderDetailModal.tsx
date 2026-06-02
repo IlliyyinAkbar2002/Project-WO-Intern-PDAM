@@ -99,16 +99,16 @@ export default function WorkorderDetailModal({
         </div>
 
         {/* CONTENT */}
-        <div className="flex flex-1 flex-col gap-6 overflow-hidden p-4">
+        <div className="flex flex-1 flex-col gap-2 overflow-hidden p-4">
           {/* INFORMASI */}
-          <div className="rounded-xl border bg-grey-100 px-6 py-4">
+          <div className="rounded-xl border bg-grey-100 px-3 py-2">
             <h3 className="mb-4 text-xl font-semibold">Informasi Workorder</h3>
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-2 gap-4">
               <DetailItem label="Kode Pengaduan" value={data.kodePengaduan} />
               <DetailItem label="Nama Workorder" value={data.namaWorkorder} />
               <DetailItem label="Status" value={data.status} />
               <DetailItem label="Prioritas" value={data.prioritas} />
-              <DetailItem label="PIC" value={data.pic?.pegawai?.nama} />
+              <DetailItem label="PIC" value={data.assignedToName ?? "-"} />
               <DetailItem label="Kategori" value={kategori} />
             </div>
           </div>

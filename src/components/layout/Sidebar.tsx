@@ -74,7 +74,7 @@ const menuItems: Record<string, MenuItem[]> = {
           href: `${baseSuperAdminPath}/master-workorders/workorder-categories`,
         },
         {
-          label: "List Workorder",
+          label: "Workorder",
           href: `${baseSuperAdminPath}/master-workorders/workorder`,
         },
         {
@@ -82,7 +82,7 @@ const menuItems: Record<string, MenuItem[]> = {
           href: `${baseSuperAdminPath}/master-workorders/workorder-categories`,
         },
         {
-          label: "Approve Workorder",
+          label: "Approve Workorder Lembur",
           href: `${baseSuperAdminPath}/master-workorders/workorder-categories`,
         },
       ],

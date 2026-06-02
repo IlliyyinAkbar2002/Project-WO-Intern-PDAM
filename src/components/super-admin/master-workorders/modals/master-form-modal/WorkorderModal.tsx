@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Cookies from "js-cookie";
 import { XIcon } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import SingleSelect from "@/components/shared/fields/SingleSelect";
@@ -16,7 +17,9 @@ import { getPegawai } from "@/services/pegawaiService";
 import { getPengaduan } from "@/services/pengaduanService";
 import { getJenisWorkorders } from "@/services/jenisWorkorderService";
 import { JenisWorkorder, KategoriWorkorder } from "@/types/jenisWorkorderTypes";
-import { WorkorderInput } from "@/types/workorderTypes";
+import { WorkorderInput, PrioritasWorkorder } from "@/types/workorderTypes";
+import { Pegawai } from "@/types/pegawaiTypes";
+import Swal from "sweetalert2";
 
 interface MasterFormModalProps {
   modal: "create" | "edit" | "detail";
@@ -28,27 +31,36 @@ interface SelectOption {
   value: string;
   label: string;
   kategori?: KategoriWorkorder | null;
-}
-
-interface PegawaiResponse {
-  pegawai: {
-    id: number;
-    nama: string;
-  };
+  lokasi?: string;
 }
 
 interface PengaduanResponse {
   kode_pengaduan: string;
   judul: string;
+  lokasi?: string;
 }
 
-const FIELDS_MAP: Record<KategoriWorkorder, string[]> = {
+const SPV_JABATAN_ID = 4;
+
+const PRIORITAS_OPTIONS = [
+  { value: "Rendah", label: "Rendah" },
+  { value: "Sedang", label: "Sedang" },
+  { value: "Tinggi", label: "Tinggi" },
+  { value: "Urgent", label: "Urgent" },
+];
+
+/* ========================================================= */
+/* PREVIEW FIELD MAP */
+/* ========================================================= */
+
+const PREVIEW_FIELDS_MAP: Record<KategoriWorkorder, string[]> = {
   meter: [
     "Nomor Meter",
     "Kondisi Meter Awal",
     "Kondisi Meter Akhir",
     "Hasil Kalibrasi",
   ],
+
   jaringan: [
     "Jenis Pipa",
     "Diameter Pipa",
@@ -57,6 +69,7 @@ const FIELDS_MAP: Record<KategoriWorkorder, string[]> = {
     "Tindakan Perbaikan",
     "Hasil Inspeksi",
   ],
+
   infrastruktur: [
     "Nama Aset",
     "Jenis Aset",
@@ -68,97 +81,86 @@ const FIELDS_MAP: Record<KategoriWorkorder, string[]> = {
   ],
 };
 
-interface PreviewFieldProps {
-  number: number;
-  label: string;
-}
-
-function PreviewField({ number, label }: PreviewFieldProps) {
-  return (
-    <div className="space-y-2">
-      <label className="text-sm font-medium leading-none">
-        {number}. {label}
-      </label>
-      <div className="rounded-md border bg-grey-50 px-3 py-2 text-sm text-muted-foreground">
-        Akan diisi oleh SPV di mobile
-      </div>
-    </div>
-  );
-}
-
-export default function JenisWorkorderModal({
+export default function WorkorderModal({
   modal,
   id,
   onClose,
 }: MasterFormModalProps) {
   const router = useRouter();
+
   const isCreate = modal === "create";
   const isEdit = modal === "edit";
   const isDetail = modal === "detail";
+
   const { formData, setFormData, resetForm } = useWorkorderStore();
+
   const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [pegawaiOptions, setPegawaiOptions] = useState<SelectOption[]>([]);
   const [pengaduanOptions, setPengaduanOptions] = useState<SelectOption[]>([]);
   const [jenisWorkorderOptions, setJenisWorkorderOptions] = useState<
     SelectOption[]
   >([]);
 
-  // =========================================================
-  // SELECTED JENIS WORKORDER
-  // =========================================================
+  const roleName = Cookies.get("role_name")?.toLowerCase() ?? "";
+  const userId = Number(Cookies.get("user_id") ?? 0);
+  const departemenId = Number(Cookies.get("departemen_id") ?? 0);
+
+  /* ========================================================= */
+  /* SELECTED DATA */
+  /* ========================================================= */
+
   const selectedJenisWorkorder = useMemo(() => {
     return jenisWorkorderOptions.find(
       (item) => item.value === String(formData.jenisWorkorderId),
     );
   }, [jenisWorkorderOptions, formData.jenisWorkorderId]);
 
-  // =========================================================
-  // SELECTED KATEGORI
-  // =========================================================
-  const selectedKategori = useMemo(() => {
-    return selectedJenisWorkorder?.kategori ?? null;
-  }, [selectedJenisWorkorder]);
+  const selectedKategori = selectedJenisWorkorder?.kategori ?? null;
 
-  // =========================================================
-  // FETCH INITIAL DATA
-  // =========================================================
+  const previewFields = useMemo(() => {
+    if (!selectedKategori) return [];
+
+    return PREVIEW_FIELDS_MAP[selectedKategori] ?? [];
+  }, [selectedKategori]);
+
+  /* ========================================================= */
+  /* INITIAL DATA */
+  /* ========================================================= */
+
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
+        const pegawaiPromise =
+          roleName === "superadmin"
+            ? getPegawai(1, 1000, "", "", undefined, SPV_JABATAN_ID)
+            : getPegawai(1, 1000, "", "", departemenId, SPV_JABATAN_ID);
+
         const [pegawaiResp, pengaduanResp, jenisResp] = await Promise.all([
-          getPegawai(1, 1000, "", ""),
+          pegawaiPromise,
           getPengaduan({
             page: 1,
             search: "",
             sort: "desc",
           }),
-
           getJenisWorkorders(1, 1000, "", "desc", true),
         ]);
 
-        // ===================================================
-        // PEGAWAI
-        // ===================================================
         setPegawaiOptions(
-          pegawaiResp.data.map((item: PegawaiResponse) => ({
-            value: String(item.pegawai.id),
-            label: item.pegawai.nama,
+          pegawaiResp.data.map((item: Pegawai) => ({
+            value: String(item.id),
+            label: item.pegawai?.nama ?? "Tanpa Nama",
           })),
         );
 
-        // ===================================================
-        // PENGADUAN
-        // ===================================================
         setPengaduanOptions(
           (pengaduanResp.data || []).map((item: PengaduanResponse) => ({
             value: item.kode_pengaduan,
             label: `${item.kode_pengaduan} - ${item.judul}`,
+            lokasi: item.lokasi ?? "",
           })),
         );
 
-        // ===================================================
-        // JENIS WORKORDER
-        // ===================================================
         setJenisWorkorderOptions(
           jenisResp.data
             .filter((item: JenisWorkorder) => item.is_active)
@@ -170,122 +172,147 @@ export default function JenisWorkorderModal({
         );
       } catch (error) {
         console.error(error);
-        toast.error("Gagal mengambil data");
+        toast.error("Gagal mengambil data awal");
       }
     };
-    fetchInitialData();
-  }, []);
 
-  // =========================================================
-  // FETCH DETAIL
-  // =========================================================
+    fetchInitialData();
+  }, [roleName, departemenId]);
+
+  /* ========================================================= */
+  /* FETCH DETAIL */
+  /* ========================================================= */
+
   useEffect(() => {
     if (!id || isCreate) return;
-
     const fetchDetail = async () => {
       try {
-        const response = await getWorkorderById(id);
-
+        const res = await getWorkorderById(id);
         setFormData({
-          id: response.id,
-          jenisWorkorderId: response.jenisWorkorderId,
-          pengaduanId: response.kodePengaduan ?? "",
-          pegawaiId: response.picId,
+          id: res.id,
+          jenisWorkorderId: res.jenisWorkorder?.id ?? res.jenisWorkorderId ?? 0,
+          kodePengaduan: res.kodePengaduan ?? "",
+          assignedTo: Number(res.assignedTo ?? 0),
+          namaWorkorder: res.namaWorkorder ?? "",
+          deskripsi: res.deskripsi ?? "",
+          lokasi: res.lokasi ?? "",
+          prioritas: res.prioritas,
+          status: res.status,
+          departemenId: res.departemenId,
+          createdBy: res.createdBy,
         });
+        Swal.close();
       } catch (error) {
         console.error(error);
-        toast.error("Gagal mengambil detail workorder");
+        Swal.fire({
+          icon: "error",
+          title: "Gagal",
+          text: "Gagal mengambil detail workorder",
+        });
       }
     };
     fetchDetail();
   }, [id, isCreate, setFormData]);
 
-  // =========================================================
-  // RESET FORM
-  // =========================================================
+  /* ========================================================= */
+  /* RESET */
+  /* ========================================================= */
   useEffect(() => {
-    return () => {
-      resetForm();
-    };
+    return () => resetForm();
   }, [resetForm]);
 
-  // =========================================================
-  // HANDLE SUBMIT
-  // =========================================================
+  /* ========================================================= */
+  /* SUBMIT */
+  /* ========================================================= */
   const handleSubmit = async () => {
     try {
+      if (!formData.kodePengaduan) {
+        return Swal.fire({
+          icon: "warning",
+          title: "Validasi",
+          text: "Pengaduan wajib dipilih",
+        });
+      }
       if (!formData.jenisWorkorderId) {
-        toast.error("Jenis workorder wajib dipilih");
-        return;
+        return Swal.fire({
+          icon: "warning",
+          title: "Validasi",
+          text: "Jenis workorder wajib dipilih",
+        });
       }
-
-      if (!formData.pengaduanId) {
-        toast.error("Pengaduan wajib dipilih");
-        return;
+      if (!formData.assignedTo) {
+        return Swal.fire({
+          icon: "warning",
+          title: "Validasi",
+          text: "SPV wajib dipilih",
+        });
       }
-
-      if (!formData.pegawaiId) {
-        toast.error("SPV wajib dipilih");
-        return;
-      }
-
       setIsSubmitting(true);
+      Swal.fire({
+        title: isEdit ? "Memperbarui workorder..." : "Membuat workorder...",
+        text: "Mohon tunggu",
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+      });
 
       const payload: WorkorderInput = {
         namaWorkorder: selectedJenisWorkorder?.label ?? "",
-        kodePengaduan: formData.pengaduanId,
+        kodePengaduan: formData.kodePengaduan,
         jenisWorkorderId: formData.jenisWorkorderId,
-        picId: formData.pegawaiId,
-        userId: 1,
-        departemenId: 1,
-        deskripsi: "",
-        lokasi: "",
-        prioritas: "Sedang",
-        status: "Open",
+        assignedTo: formData.assignedTo,
+        createdBy: userId,
+        departemenId,
+        deskripsi: formData.deskripsi,
+        lokasi: formData.lokasi,
+        prioritas: formData.prioritas,
+        status: formData.status,
       };
 
       if (id && isEdit) {
         await updateWorkorder(id, payload);
-        toast.success("Workorder berhasil diperbarui");
+        Swal.fire({
+          icon: "success",
+          title: "Berhasil",
+          text: "Workorder berhasil diperbarui",
+          timer: 1500,
+          showConfirmButton: false,
+        });
       } else {
         await createWorkorder(payload);
-        toast.success("Workorder berhasil dibuat");
+        Swal.fire({
+          icon: "success",
+          title: "Berhasil",
+          text: "Workorder berhasil dibuat",
+          timer: 1500,
+          showConfirmButton: false,
+        });
       }
-
-      router.refresh();
-
       onClose();
+      router.refresh();
     } catch (error) {
       console.error(error);
-      toast.error(
-        error instanceof Error ? error.message : "Gagal menyimpan workorder",
-      );
+      Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text:
+          error instanceof Error ? error.message : "Gagal menyimpan workorder",
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // =========================================================
-  // PREVIEW FIELD
-  // =========================================================
-  const renderPreviewFields = () => {
-    if (!selectedKategori) {
-      return (
-        <div className="text-sm text-muted-foreground">
-          Pilih jenis workorder terlebih dahulu
-        </div>
-      );
-    }
-
-    const fields = FIELDS_MAP[selectedKategori];
-
-    return (
-      <div className="flex flex-col gap-2">
-        {fields.map((field, index) => (
-          <PreviewField key={field} number={index + 1} label={field} />
-        ))}
-      </div>
+  const handlePengaduanChange = (selected: SelectOption) => {
+    const selectedData = pengaduanOptions.find(
+      (item) => item.value === selected.value,
     );
+
+    setFormData({
+      kodePengaduan: selected.value,
+      lokasi: selectedData?.lokasi ?? "",
+    });
   };
 
   return (
@@ -297,7 +324,6 @@ export default function JenisWorkorderModal({
         className="flex h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* HEADER */}
         <div className="flex items-center justify-between bg-primary-500 px-6 py-4">
           <h2 className="text-2xl font-semibold text-white">
             {isCreate
@@ -308,7 +334,6 @@ export default function JenisWorkorderModal({
           </h2>
 
           <button
-            type="button"
             onClick={onClose}
             className="rounded-full p-1 hover:bg-primary-400"
           >
@@ -316,36 +341,29 @@ export default function JenisWorkorderModal({
           </button>
         </div>
 
-        {/* CONTENT */}
-        <div className="flex flex-1 flex-col gap-6 overflow-hidden p-4">
-          {/* FORM */}
-          <div className="rounded-xl border bg-grey-100 px-6 py-4">
+        <div className="flex flex-1 flex-col gap-2 overflow-hidden p-4">
+          <div className="rounded-xl border bg-grey-100 px-3 py-400">
             <h3 className="mb-4 text-xl font-semibold">Informasi Workorder</h3>
-            <div className="grid grid-cols-2 gap-6">
-              {/* PENGADUAN */}
+
+            <div className="grid grid-cols-2 gap-4">
               <SingleSelect
                 label="Pengaduan"
                 placeholder="Pilih pengaduan"
                 options={pengaduanOptions}
                 value={
                   pengaduanOptions.find(
-                    (item) => item.value === formData.pengaduanId,
-                  ) || null
+                    (item) => item.value === formData.kodePengaduan,
+                  ) ?? null
                 }
-                onChange={(selected) =>
-                  setFormData({
-                    pengaduanId: selected.value,
-                  })
-                }
-                isDisabled={isDetail}
+                onChange={handlePengaduanChange}
+                isDisabled={isDetail || isEdit}
               />
 
-              {/* JENIS WORKORDER */}
               <SingleSelect
                 label="Jenis Workorder"
                 placeholder="Pilih jenis workorder"
                 options={jenisWorkorderOptions}
-                value={selectedJenisWorkorder || null}
+                value={selectedJenisWorkorder ?? null}
                 onChange={(selected) =>
                   setFormData({
                     jenisWorkorderId: Number(selected.value),
@@ -354,63 +372,101 @@ export default function JenisWorkorderModal({
                 isDisabled={isDetail}
               />
 
-              {/* SPV */}
               <SingleSelect
                 label="Ditujukan Kepada"
                 placeholder="Pilih SPV"
                 options={pegawaiOptions}
                 value={
                   pegawaiOptions.find(
-                    (item) => item.value === String(formData.pegawaiId),
-                  ) || null
+                    (item) => item.value === String(formData.assignedTo),
+                  ) ?? null
                 }
                 onChange={(selected) =>
                   setFormData({
-                    pegawaiId: Number(selected.value),
+                    assignedTo: Number(selected.value),
                   })
                 }
                 isDisabled={isDetail}
               />
 
-              {/* KATEGORI */}
+              <SingleSelect
+                label="Prioritas"
+                placeholder="Pilih prioritas"
+                options={PRIORITAS_OPTIONS}
+                value={
+                  PRIORITAS_OPTIONS.find(
+                    (item) => item.value === formData.prioritas,
+                  ) ?? null
+                }
+                onChange={(selected) =>
+                  setFormData({
+                    prioritas: selected.value as PrioritasWorkorder,
+                  })
+                }
+                isDisabled={isDetail}
+              />
+
               <div>
                 <label className="mb-2 block text-sm font-medium">
                   Kategori
                 </label>
 
                 <div className="rounded-lg border bg-white px-4 py-3 text-sm">
-                  {selectedKategori || "-"}
+                  {selectedKategori ?? "-"}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* PREVIEW */}
+          {/* PREVIEW FIELD SPESIFIKASI */}
           <div className="flex h-[420px] flex-col overflow-hidden rounded-xl border">
             <div className="bg-primary-500 px-6 py-4">
               <h3 className="text-lg font-semibold text-white">
                 Preview Field Spesifikasi
               </h3>
             </div>
+
             <div className="flex-1 overflow-y-auto bg-grey-100 px-6 py-4 pb-10">
-              {renderPreviewFields()}
+              {previewFields.length > 0 ? (
+                <div className="flex flex-col gap-2">
+                  {previewFields.map((field, index) => (
+                    <PreviewField
+                      key={field}
+                      number={index + 1}
+                      label={field}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground">
+                  Pilih jenis workorder terlebih dahulu
+                </div>
+              )}
             </div>
           </div>
 
-          {/* FOOTER */}
           {!isDetail && (
-            <div className="flex justify-end">
-              <Button
-                variant="primary"
-                size="md"
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-              >
+            <div className="sticky bottom-0 flex justify-end border-t bg-white px-6 py-4">
+              <Button onClick={handleSubmit} disabled={isSubmitting}>
                 {isSubmitting ? "Menyimpan..." : "Simpan"}
               </Button>
             </div>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function PreviewField({ number, label }: { number: number; label: string }) {
+  return (
+    <div className="space-y-2">
+      <label className="text-sm font-medium leading-none">
+        {number}. {label}
+      </label>
+
+      <div className="rounded-md border bg-grey-50 px-3 py-2 text-sm text-muted-foreground">
+        Akan diisi oleh SPV di mobile
       </div>
     </div>
   );

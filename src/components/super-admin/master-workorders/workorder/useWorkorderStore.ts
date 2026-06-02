@@ -1,10 +1,18 @@
 import { create } from "zustand";
+import { PrioritasWorkorder, StatusWorkorder } from "@/types/workorderTypes";
 
 export interface WorkorderFormData {
   id: number;
   jenisWorkorderId: number;
-  pengaduanId: string;
-  pegawaiId: number;
+  kodePengaduan: string;
+  assignedTo: number;
+  createdBy: number;
+  departemenId: number;
+  namaWorkorder: string;
+  deskripsi: string;
+  lokasi: string;
+  prioritas: PrioritasWorkorder;
+  status: StatusWorkorder;
 }
 
 interface WorkorderStore {
@@ -16,8 +24,15 @@ interface WorkorderStore {
 const initialFormData: WorkorderFormData = {
   id: 0,
   jenisWorkorderId: 0,
-  pengaduanId: "",
-  pegawaiId: 0,
+  kodePengaduan: "",
+  assignedTo: 0,
+  createdBy: 0,
+  departemenId: 0,
+  namaWorkorder: "",
+  deskripsi: "",
+  lokasi: "",
+  prioritas: "Rendah",
+  status: "Pending",
 };
 
 export const useWorkorderStore = create<WorkorderStore>((set) => ({
@@ -29,7 +44,6 @@ export const useWorkorderStore = create<WorkorderStore>((set) => ({
         ...data,
       },
     })),
-
   resetForm: () =>
     set({
       formData: initialFormData,

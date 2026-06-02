@@ -21,12 +21,14 @@ interface GetWorkorderParams {
 // =========================================================
 const handleApiError = (error: unknown, defaultMessage: string): never => {
   console.error(defaultMessage, error);
+
   const err = error as any;
 
   if (err.response?.status === 422) {
     const validationErrors = err.response.data?.errors;
     if (validationErrors) {
       const errorMessages = Object.values(validationErrors).flat().join(", ");
+
       throw new Error(errorMessages);
     }
   }
@@ -45,12 +47,13 @@ export const getWorkorders = async (
     const response = await api.get("/v1/workorder", {
       params: toSnakeCase(params),
     });
-    return toCamelCase(response.data);
-  } catch (error: any) {
-    console.error("Get workorders error:", error);
-    throw new Error(
-      error.response?.data?.message || "Gagal mengambil data workorder.",
-    );
+    const data = toCamelCase(response.data);
+    return {
+      ...data,
+      data: data.data.map(mapWorkorder),
+    };
+  } catch (error) {
+    throw handleApiError(error, "Gagal mengambil data workorder.");
   }
 };
 
@@ -60,12 +63,10 @@ export const getWorkorders = async (
 export const getWorkorderById = async (id: string): Promise<Workorder> => {
   try {
     const response = await api.get(`/v1/workorder/${id}`);
-    return toCamelCase(response.data);
-  } catch (error: any) {
-    console.error("Get workorder detail error:", error);
-    throw new Error(
-      error.response?.data?.message || "Gagal mengambil detail workorder.",
-    );
+    const data = toCamelCase(response.data.data);
+    return mapWorkorder(data);
+  } catch (error) {
+    throw handleApiError(error, "Gagal mengambil detail workorder.");
   }
 };
 
@@ -75,9 +76,10 @@ export const getWorkorderById = async (id: string): Promise<Workorder> => {
 export const createWorkorder = async (data: WorkorderInput) => {
   try {
     const response = await api.post("/v1/workorder", toSnakeCase(data));
+
     return toCamelCase(response.data);
   } catch (error) {
-    handleApiError(error, "Gagal menambah workorder.");
+    throw handleApiError(error, "Gagal menambah workorder.");
   }
 };
 
@@ -90,9 +92,10 @@ export const updateWorkorder = async (
 ) => {
   try {
     const response = await api.put(`/v1/workorder/${id}`, toSnakeCase(data));
+
     return toCamelCase(response.data);
   } catch (error) {
-    handleApiError(error, "Gagal memperbarui workorder.");
+    throw handleApiError(error, "Gagal memperbarui workorder.");
   }
 };
 
@@ -101,12 +104,11 @@ export const updateWorkorder = async (
 // =========================================================
 export const updateWorkorderStatus = async (id: string, status: string) => {
   try {
-    const response = await api.patch(`/v1/workorder/${id}`, {
-      status,
-    });
+    const response = await api.patch(`/v1/workorder/${id}`, { status });
+
     return toCamelCase(response.data);
   } catch (error) {
-    handleApiError(error, "Gagal memperbarui status workorder.");
+    throw handleApiError(error, "Gagal memperbarui status workorder.");
   }
 };
 
@@ -116,9 +118,22 @@ export const updateWorkorderStatus = async (id: string, status: string) => {
 export const deleteWorkorder = async (id: number) => {
   try {
     const response = await api.delete(`/v1/workorder/${id}`);
+
     return toCamelCase(response.data);
   } catch (error) {
-    handleApiError(error, "Gagal menghapus workorder.");
+    throw handleApiError(error, "Gagal menghapus workorder.");
+  }
+};
+
+// =========================================================
+// GET KPI
+// =========================================================
+export const getWorkorderKPI = async () => {
+  try {
+    const response = await api.get("/v1/kpi");
+    return toCamelCase(response.data);
+  } catch (error) {
+    throw handleApiError(error, "Gagal mengambil KPI workorder.");
   }
 };
 
@@ -132,6 +147,7 @@ export const extendWorkorder = async (
 ) => {
   try {
     const waktuMulai = format(new Date(), "yyyy-MM-dd HH:mm:ss");
+
     const response = await api.post("/v1/workorder-action", {
       workorder_id: workorderId,
       action_id: actionId,
@@ -140,7 +156,7 @@ export const extendWorkorder = async (
     });
     return toCamelCase(response.data);
   } catch (error) {
-    handleApiError(error, "Gagal memperpanjang workorder.");
+    throw handleApiError(error, "Gagal memperpanjang workorder.");
   }
 };
 
@@ -151,17 +167,15 @@ export const delayWorkorder = async (
 ) => {
   try {
     const waktuMulai = format(new Date(), "yyyy-MM-dd HH:mm:ss");
-
     const response = await api.post("/v1/workorder-action", {
       workorder_id: workorderId,
       action_id: actionId,
       keterangan: reason,
       waktu_mulai: waktuMulai,
     });
-
     return toCamelCase(response.data);
   } catch (error) {
-    handleApiError(error, "Gagal menunda workorder.");
+    throw handleApiError(error, "Gagal menunda workorder.");
   }
 };
 
@@ -171,15 +185,29 @@ export const resumeWorkorder = async (
 ) => {
   try {
     const waktuMulai = format(new Date(), "yyyy-MM-dd HH:mm:ss");
-
     const response = await api.post("/v1/workorder-action", {
       workorder_id: workorderId,
       action_id: actionId,
       waktu_mulai: waktuMulai,
     });
-
     return toCamelCase(response.data);
   } catch (error) {
-    handleApiError(error, "Gagal melanjutkan workorder.");
+    throw handleApiError(error, "Gagal melanjutkan workorder.");
   }
+};
+
+const mapWorkorder = (data: any): Workorder => {
+  return {
+    ...data,
+
+    assignedTo:
+      typeof data.assignedTo === "object"
+        ? data.assignedTo?.id
+        : (data.assignedTo ?? 0),
+
+    assignedToName:
+      typeof data.assignedTo === "object"
+        ? data.assignedTo?.nama
+        : (data.assignedToUser?.pegawai?.nama ?? "-"),
+  };
 };

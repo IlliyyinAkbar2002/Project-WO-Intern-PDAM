@@ -1,12 +1,22 @@
 export interface Pegawai {
   id: number;
   nama: string;
-  nip: string
+  nip: string;
+  departemenId?: number | null;
+  departemenNama?: string | null;
+  jabatanId?: number | null;
+  jabatanNama?: string | null;
 }
 
-export interface User  {
+export interface User {
   id: number;
   email: string;
   roleId: number;
-  pegawai: Pegawai;
+  roleName?: string;
+  pegawaiId?: number;
+  departemenId?: number | null;
+  departemenNama?: string | null;
+  jabatanId?: number | null;
+  jabatanNama?: string | null;
+  pegawai?: Pegawai;
 };

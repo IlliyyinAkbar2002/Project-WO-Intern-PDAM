@@ -8,49 +8,51 @@ type Employee = {
   color: string;
 };
 
+type Props = {
+  data?: Employee[];
+  radialSeries?: number[];
+};
+
 const sampleData: Employee[] = [
   {
     name: "Budi",
     percent: 20,
-    color: "#22C55E", // hijau
+    color: "#22C55E",
   },
   {
     name: "Siti",
     percent: 40,
-    color: "#3B82F6", // biru
+    color: "#3B82F6",
   },
   {
     name: "Andi",
     percent: 60,
-    color: "#F59E0B", // kuning
+    color: "#F59E0B",
   },
   {
     name: "Rina",
     percent: 80,
-    color: "#EF4444", // merah
+    color: "#EF4444",
   },
   {
     name: "Joko",
     percent: 100,
-    color: "#8B5CF6", // ungu
+    color: "#8B5CF6",
   },
 ];
 
 export default function AdminDashboardProgress({
   data = sampleData,
-}: {
-  data?: Employee[];
-}) {
+  radialSeries = [0, 0, 0],
+}: Props) {
   const chartRef = useRef<HTMLDivElement | null>(null);
   const chartInstance = useRef<any>(null);
-
   const getCssVar = (name: string, fallback = "#1447E6") => {
     try {
-      const v = getComputedStyle(document.documentElement)
+      const value = getComputedStyle(document.documentElement)
         .getPropertyValue(name)
         .trim();
-
-      return v || fallback;
+      return value || fallback;
     } catch {
       return fallback;
     }
@@ -59,25 +61,28 @@ export default function AdminDashboardProgress({
   useEffect(() => {
     let cancelled = false;
 
-    async function init() {
+    const initChart = async () => {
       try {
         const ApexCharts = (await import("apexcharts")).default;
 
-        if (cancelled) return;
+        if (cancelled || !chartRef.current) return;
+
+        // destroy existing chart before recreate
+        if (chartInstance.current) {
+          chartInstance.current.destroy();
+          chartInstance.current = null;
+        }
 
         const brandColor = getCssVar("--color-fg-brand", "#1447E6");
-
         const warningColor = getCssVar("--color-warning", "#F59E0B");
-
         const successColor = getCssVar("--color-success", "#10B981");
-
         const neutralSecondaryMediumColor = getCssVar(
           "--color-neutral-secondary-medium",
           "#E5E7EB",
         );
 
         const options = {
-          series: [90, 85, 70],
+          series: radialSeries,
 
           colors: [brandColor, warningColor, successColor],
 
@@ -138,29 +143,25 @@ export default function AdminDashboardProgress({
           },
         };
 
-        if (chartRef.current) {
-          chartInstance.current = new ApexCharts(
-            chartRef.current,
-            options as any,
-          );
+        chartInstance.current = new ApexCharts(chartRef.current, options);
 
-          chartInstance.current.render();
-        }
-      } catch (err) {
-        console.error("Failed to load ApexCharts for radial chart", err);
+        await chartInstance.current.render();
+      } catch (error) {
+        console.error("Failed to load ApexCharts for radial chart", error);
       }
-    }
+    };
 
-    init();
+    initChart();
 
     return () => {
       cancelled = true;
 
       if (chartInstance.current) {
         chartInstance.current.destroy();
+        chartInstance.current = null;
       }
     };
-  }, [data]);
+  }, [radialSeries]);
 
   return (
     <div className="w-full bg-neutral-secondary-medium border border-light-medium p-4 rounded-base">

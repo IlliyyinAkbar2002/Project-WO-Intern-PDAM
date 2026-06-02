@@ -9,6 +9,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import SingleSelect from "@/components/shared/fields/SingleSelect";
 import { sortOptions } from "@/constants/options";
 import { Pengaduan } from "@/types/pengaduanTypes";
+import StatusBadge from "@/components/shared/StatusBadge";
 
 interface PengaduanDataContainerProps {
   data: Pengaduan[];
@@ -18,6 +19,13 @@ interface PengaduanDataContainerProps {
   sort: string;
   itemsPerPage: number;
 }
+
+const statusColorMap: Record<string, string> = {
+  Pending: "text-yellow-500",
+  Proses: "text-blue-500",
+  Selesai: "text-green-500",
+  Ditolak: "text-red-500",
+};
 
 export default function PengaduanDataContainer({
   data,
@@ -29,7 +37,6 @@ export default function PengaduanDataContainer({
 }: PengaduanDataContainerProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-
   const [sortData, setSortData] = useState(sort);
   const [searchText, setSearchText] = useState(search || "");
 
@@ -67,7 +74,7 @@ export default function PengaduanDataContainer({
     {
       header: "Kode",
       accessorFn: (row) => {
-        console.log("ROW:", row);
+        // console.log("ROW:", row);
         return row.kode_pengaduan;
       },
     },
@@ -78,6 +85,17 @@ export default function PengaduanDataContainer({
     {
       header: "Deskripsi",
       accessorFn: (row) => row.deskripsi,
+    },
+    {
+      header: "Lokasi",
+      accessorFn: (row) => row.lokasi,
+    },
+    {
+      header: "Status",
+      accessorFn: (row) => row.status,
+      cell: ({ getValue }) => {
+        return <StatusBadge status={getValue() as any} />;
+      },
     },
     {
       header: "Tanggal Pengaduan",
