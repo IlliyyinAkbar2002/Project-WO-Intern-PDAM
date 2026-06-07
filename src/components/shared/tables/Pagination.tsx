@@ -15,7 +15,8 @@ export function Pagination({
   return (
     <div className="flex justify-center">
       <ReactPaginate
-        forcePage={currentPage - 1}
+        forcePage={Math.max(0, (currentPage || 1) - 1)}
+        pageCount={Math.max(1, totalPages || 1)}
         previousLabel={
           <ArrowCircleLeft
             size={28}
@@ -29,7 +30,6 @@ export function Pagination({
           />
         }
         breakLabel="..."
-        pageCount={totalPages}
         marginPagesDisplayed={1}
         pageRangeDisplayed={3}
         onPageChange={({ selected }) => onPageChange(selected + 1)}

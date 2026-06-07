@@ -13,7 +13,6 @@ export default async function DashboardLayout({
 }>) {
   //Mengambil token & role dari cookies
   const cookieStore = await cookies();
-
   const token = cookieStore.get("token")?.value;
   const roleName = cookieStore.get("role_name")?.value ?? "";
   const userName = cookieStore.get("user_name")?.value ?? "";
@@ -40,7 +39,7 @@ export default async function DashboardLayout({
 
       {/* Sidebar */}
       <div className="fixed top-16 h-[calc(100vh-4rem)] w-60 z-10">
-        <Sidebar role={roleName.toLowerCase()} department={departmentName} />
+        <Sidebar role={roleName.toLowerCase()} departement={departmentName} />
       </div>
 
       <div className="absolute top-16 left-60 h-[calc(100vh-4rem)] w-[calc(100vw-15rem)] overflow-auto py-12 z-10">

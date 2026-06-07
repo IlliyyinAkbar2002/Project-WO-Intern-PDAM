@@ -18,12 +18,13 @@ import { getPengaduan } from "@/services/pengaduanService";
 import { getJenisWorkorders } from "@/services/jenisWorkorderService";
 import { JenisWorkorder, KategoriWorkorder } from "@/types/jenisWorkorderTypes";
 import { WorkorderInput, PrioritasWorkorder } from "@/types/workorderTypes";
-import { Pegawai } from "@/types/pegawaiTypes";
+import { PegawaiListItem } from "@/types/pegawaiTypes";
 import Swal from "sweetalert2";
 
 interface MasterFormModalProps {
   modal: "create" | "edit" | "detail";
   id?: string | null;
+  kodePengaduan?: string | null;
   onClose: () => void;
 }
 
@@ -41,7 +42,6 @@ interface PengaduanResponse {
 }
 
 const SPV_JABATAN_ID = 4;
-
 const PRIORITAS_OPTIONS = [
   { value: "Rendah", label: "Rendah" },
   { value: "Sedang", label: "Sedang" },
@@ -52,7 +52,6 @@ const PRIORITAS_OPTIONS = [
 /* ========================================================= */
 /* PREVIEW FIELD MAP */
 /* ========================================================= */
-
 const PREVIEW_FIELDS_MAP: Record<KategoriWorkorder, string[]> = {
   meter: [
     "Nomor Meter",
@@ -60,7 +59,6 @@ const PREVIEW_FIELDS_MAP: Record<KategoriWorkorder, string[]> = {
     "Kondisi Meter Akhir",
     "Hasil Kalibrasi",
   ],
-
   jaringan: [
     "Jenis Pipa",
     "Diameter Pipa",
@@ -69,7 +67,6 @@ const PREVIEW_FIELDS_MAP: Record<KategoriWorkorder, string[]> = {
     "Tindakan Perbaikan",
     "Hasil Inspeksi",
   ],
-
   infrastruktur: [
     "Nama Aset",
     "Jenis Aset",
@@ -87,21 +84,16 @@ export default function WorkorderModal({
   onClose,
 }: MasterFormModalProps) {
   const router = useRouter();
-
   const isCreate = modal === "create";
   const isEdit = modal === "edit";
   const isDetail = modal === "detail";
-
   const { formData, setFormData, resetForm } = useWorkorderStore();
-
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const [pegawaiOptions, setPegawaiOptions] = useState<SelectOption[]>([]);
   const [pengaduanOptions, setPengaduanOptions] = useState<SelectOption[]>([]);
   const [jenisWorkorderOptions, setJenisWorkorderOptions] = useState<
     SelectOption[]
   >([]);
-
   const roleName = Cookies.get("role_name")?.toLowerCase() ?? "";
   const userId = Number(Cookies.get("user_id") ?? 0);
   const departemenId = Number(Cookies.get("departemen_id") ?? 0);
@@ -109,7 +101,6 @@ export default function WorkorderModal({
   /* ========================================================= */
   /* SELECTED DATA */
   /* ========================================================= */
-
   const selectedJenisWorkorder = useMemo(() => {
     return jenisWorkorderOptions.find(
       (item) => item.value === String(formData.jenisWorkorderId),
@@ -127,7 +118,6 @@ export default function WorkorderModal({
   /* ========================================================= */
   /* INITIAL DATA */
   /* ========================================================= */
-
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
@@ -147,7 +137,7 @@ export default function WorkorderModal({
         ]);
 
         setPegawaiOptions(
-          pegawaiResp.data.map((item: Pegawai) => ({
+          pegawaiResp.data.map((item: PegawaiListItem) => ({
             value: String(item.id),
             label: item.pegawai?.nama ?? "Tanpa Nama",
           })),
@@ -182,7 +172,6 @@ export default function WorkorderModal({
   /* ========================================================= */
   /* FETCH DETAIL */
   /* ========================================================= */
-
   useEffect(() => {
     if (!id || isCreate) return;
     const fetchDetail = async () => {

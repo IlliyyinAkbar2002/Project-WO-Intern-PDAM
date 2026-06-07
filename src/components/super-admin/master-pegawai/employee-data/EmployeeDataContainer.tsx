@@ -1,21 +1,37 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Pegawai } from "@/types/pegawaiTypes";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { PegawaiDetail, PegawaiListItem } from "@/types/pegawaiTypes";
+import { getPegawaiById } from "@/services/pegawaiService";
+import EmployeeDetailModal from "../modals/EmployeeDetailModal";
 import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/shared/tables/Pagination";
 import { MainTable } from "@/components/shared/tables/MainTable";
 import { ColumnDef } from "@tanstack/react-table";
+import {
+  EyeIcon,
+  PencilSimpleIcon,
+  EnvelopeSimpleIcon,
+  UserMinusIcon,
+  PlusIcon,
+} from "@phosphor-icons/react";
+import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
 
 interface EmployeeDataContainerProps {
-  data: Pegawai[];
+  data: PegawaiListItem[];
   totalPages: number;
   currentPage: number;
   search: string;
   sort: string;
   itemsPerPage: number;
 }
+
+type Option = {
+  id: number;
+  nama: string;
+};
 
 export default function EmployeeDataContainer({
   data,
@@ -27,41 +43,122 @@ export default function EmployeeDataContainer({
 }: EmployeeDataContainerProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
 
-  const [departemenId, setDepartemenId] = useState<string | undefined>();
-  const [jabatanId, setJabatanId] = useState<string | undefined>();
+  // =========================
+  // STATE
+  // =========================
   const [searchText, setSearchText] = useState(search || "");
+  const [loadingDetail, setLoadingDetail] = useState(false);
+  const [departemenId, setDepartemenId] = useState<number | undefined>();
+  const [jabatanId, setJabatanId] = useState<number | undefined>();
+  const [departemenOptions, setDepartemenOptions] = useState<Option[]>([]);
+  const [jabatanOptions, setJabatanOptions] = useState<Option[]>([]);
+  const [showDetail, setShowDetail] = useState(false);
+  const [detailData, setDetailData] = useState<PegawaiDetail | null>(null);
 
-  // ✅ Search realtime
+  // =========================
+  // FETCH FILTER OPTIONS (IMPORTANT FIX)
+  // =========================
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        const res = await api.get("/v1/pegawai/meta/filter-options");
+        setDepartemenOptions(res.data.departemen || []);
+        setJabatanOptions(res.data.jabatan || []);
+      } catch (error) {
+        console.error("Failed to load filter options", error);
+      }
+    };
+    fetchOptions();
+  }, []);
+
+  // =========================
+  // MODAL
+  // =========================
+  const openModal = (type: "create") => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("modal", type);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  // =========================
+  // SEARCH (SERVER SIDE)
+  // =========================
   const handleSearchChange = (value: string) => {
     setSearchText(value);
+
     const params = new URLSearchParams(searchParams.toString());
     params.set("search", value);
-    router.push(`?${params.toString()}`);
+    params.set("page", "1");
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
-  // ✅ Pagination
-  const handlePageChange = (newPage: number) => {
+  // =========================
+  // PAGINATION
+  // =========================
+  const handlePageChange = (page: number) => {
     const params = new URLSearchParams(searchParams.toString());
-    params.set("page", newPage.toString());
-    router.push(`?${params.toString()}`);
+    params.set("page", String(page));
+    params.set("per_page", String(itemsPerPage));
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
-  // ✅ Filter data
-  const filteredData = data.filter((p) => {
-    const matchDepartemen = departemenId
-      ? p.pegawai.departemen === departemenId
-      : true;
-    const matchJabatan = jabatanId ? p.pegawai.jabatan === jabatanId : true;
-    const matchSearch = searchText
-      ? p.pegawai.nama.toLowerCase().includes(searchText.toLowerCase()) ||
-        p.pegawai.nip.toLowerCase().includes(searchText.toLowerCase())
-      : true;
-    return matchDepartemen && matchJabatan && matchSearch;
-  });
+  // =========================
+  // FILTER (SERVER SIDE FIXED)
+  // =========================
+  const handleFilter = (key: "departemen" | "jabatan", value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", "1");
 
-  // ✅ Kolom tabel (pakai ColumnDef agar cocok dengan MainTable)
-  const columns: ColumnDef<Pegawai>[] = [
+    if (key === "departemen") {
+      const id = value ? Number(value) : undefined;
+      setDepartemenId(id);
+      if (id) params.set("departemen_id", String(id));
+      else params.delete("departemen_id");
+    }
+    if (key === "jabatan") {
+      const id = value ? Number(value) : undefined;
+      setJabatanId(id);
+      if (id) params.set("jabatan_id", String(id));
+      else params.delete("jabatan_id");
+    }
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    router.refresh();
+  };
+
+  // =========================
+  // DETAIL (SERVER SIDE FIXED)
+  // =========================
+  const handleDetail = async (id: number) => {
+    try {
+      setLoadingDetail(true);
+
+      const data = await getPegawaiById(id);
+
+      setDetailData(data);
+      setShowDetail(true);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
+
+  const resetFilter = () => {
+    setDepartemenId(undefined);
+    setJabatanId(undefined);
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("departemen_id");
+    params.delete("jabatan_id");
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  // =========================
+  // TABLE COLUMNS
+  // =========================
+  const columns: ColumnDef<PegawaiListItem>[] = [
     {
       header: "No",
       accessorFn: (_row, idx) => (currentPage - 1) * itemsPerPage + idx + 1,
@@ -70,38 +167,67 @@ export default function EmployeeDataContainer({
     {
       header: "Nama",
       accessorFn: (row) => row.pegawai.nama,
-      cell: (info) => info.getValue(),
     },
     {
       header: "NIP",
       accessorFn: (row) => row.pegawai.nip,
-      cell: (info) => info.getValue(),
     },
     {
       header: "Departemen",
       accessorFn: (row) => row.pegawai.departemen,
-      cell: (info) => info.getValue() || "-",
     },
     {
       header: "Jabatan",
       accessorFn: (row) => row.pegawai.jabatan,
-      cell: (info) => info.getValue() || "-",
     },
     {
       header: "Email",
       accessorFn: (row) => row.email,
-      cell: (info) => info.getValue() || "-",
+    },
+    {
+      header: "Status Akun",
+      accessorFn: (row) => row.is_active,
+      cell: ({ getValue }) => {
+        const active = getValue<boolean>();
+
+        return (
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+              active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+            }`}
+          >
+            {active ? "Aktif" : "Nonaktif"}
+          </span>
+        );
+      },
     },
     {
       header: "Aksi",
       id: "actions",
       cell: ({ row }) => (
-        <div className="flex flex-col items-center gap-1">
-          <button className="text-sm text-blue-600 hover:underline flex items-center gap-1">
-            ✉️ <span>Forgot Password</span>
+        <div className="flex flex-col items-start gap-2">
+          <button
+            disabled={loadingDetail}
+            onClick={() => handleDetail(row.original.pegawai.id)}
+            className="flex items-center gap-2 text-sm text-blue-600 hover:underline"
+          >
+            <EyeIcon size={16} />
+            Detail
           </button>
-          <button className="text-sm text-red-600 hover:underline flex items-center gap-1">
-            🚫 <span>Disable</span>
+
+          <button className="flex items-center gap-2 text-sm text-yellow-600 hover:underline">
+            <PencilSimpleIcon size={16} />
+            Edit
+          </button>
+
+          <button className="flex items-center gap-2 text-sm text-green-600 hover:underline">
+            <EnvelopeSimpleIcon size={16} />
+            Reset Password
+          </button>
+
+          <button className="flex items-center gap-2 text-sm text-red-600 hover:underline">
+            <UserMinusIcon size={16} />
+            Disable
           </button>
         </div>
       ),
@@ -110,74 +236,80 @@ export default function EmployeeDataContainer({
 
   return (
     <div className="flex-col mx-28 rounded-lg overflow-hidden bg-white">
-      {/* ✅ Header */}
+      {/* HEADER */}
       <div className="flex items-center justify-between p-4">
         <h2 className="text-3xl font-semibold">Master Pegawai</h2>
+
         <div className="flex items-center gap-4">
           <Input
             placeholder="Pencarian"
             value={searchText}
             onChange={(e) => handleSearchChange(e.target.value)}
           />
+
           <Pagination
             totalPages={totalPages}
-            onPageChange={handlePageChange}
             currentPage={currentPage}
+            onPageChange={handlePageChange}
           />
+
+          <Button
+            variant="primary"
+            onClick={() => openModal("create")}
+            size="sm"
+          >
+            <PlusIcon size={18} />
+            Buat Baru
+          </Button>
         </div>
       </div>
 
-      {/* ✅ Filter */}
+      {/* FILTER (UI TETAP SAMA) */}
       <div className="flex gap-4 px-4 mb-4">
         <select
-          value={departemenId || ""}
-          onChange={(e) =>
-            setDepartemenId(e.target.value ? e.target.value : undefined)
-          }
+          value={departemenId ?? ""}
+          onChange={(e) => handleFilter("departemen", e.target.value)}
           className="border px-2 py-1 rounded"
         >
           <option value="">Filter Departemen</option>
-          {Array.from(
-            new Set(data.map((p) => p.pegawai.departemen).filter(Boolean))
-          ).map((d, idx) => (
-            <option key={idx} value={d || ""}>
-              {d}
+          {departemenOptions.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.nama}
             </option>
           ))}
         </select>
 
         <select
-          value={jabatanId || ""}
-          onChange={(e) =>
-            setJabatanId(e.target.value ? e.target.value : undefined)
-          }
+          value={jabatanId ?? ""}
+          onChange={(e) => handleFilter("jabatan", e.target.value)}
           className="border px-2 py-1 rounded"
         >
           <option value="">Filter Jabatan</option>
-          {Array.from(
-            new Set(data.map((p) => p.pegawai.jabatan).filter(Boolean))
-          ).map((j, idx) => (
-            <option key={idx} value={j || ""}>
-              {j}
+          {jabatanOptions.map((j) => (
+            <option key={j.id} value={j.id}>
+              {j.nama}
             </option>
           ))}
         </select>
 
-        <button
-          onClick={() => {
-            setDepartemenId(undefined);
-            setJabatanId(undefined);
-          }}
-          className="border px-2 py-1 rounded"
-        >
+        <button onClick={resetFilter} className="border px-2 py-1 rounded">
           Reset Filter
         </button>
       </div>
 
-      {/* ✅ Tabel utama */}
-      <div className="px-4 pb-4 bg-transparent">
-        <MainTable columns={columns} data={filteredData} loading={false} />
+      {/* TABLE */}
+      <div className="px-4 pb-4">
+        <MainTable columns={columns} data={data} loading={false} />
       </div>
+      {showDetail && detailData && (
+        <EmployeeDetailModal
+          data={detailData}
+          onClose={() => {
+            setShowDetail(false);
+            setDetailData(null);
+          }}
+        />
+      )}
     </div>
   );
 }

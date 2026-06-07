@@ -1,4 +1,4 @@
-export interface Pegawai {
+export interface UserPegawai {
   id: number;
   nama: string;
   nip: string;
@@ -18,5 +18,6 @@ export interface User {
   departemenNama?: string | null;
   jabatanId?: number | null;
   jabatanNama?: string | null;
-  pegawai?: Pegawai;
+  isActive?: boolean;
+  pegawai?: UserPegawai;
 };

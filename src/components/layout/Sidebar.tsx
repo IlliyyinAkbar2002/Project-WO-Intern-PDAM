@@ -88,7 +88,7 @@ const menuItems: Record<string, MenuItem[]> = {
       ],
     },
     {
-      title: "Master Location",
+      title: "View Location",
       icon: <MapPinAreaIcon size={24} className="text-primary-500" />,
       subMenu: [
         {

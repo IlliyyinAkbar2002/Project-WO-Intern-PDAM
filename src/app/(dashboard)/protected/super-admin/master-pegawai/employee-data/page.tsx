@@ -8,28 +8,47 @@ import { PegawaiResponse } from "@/types/pegawaiTypes";
 
 export default function EmployeeDataPage() {
   const searchParams = useSearchParams();
-
-  const rawPage = parseInt(searchParams.get("page") || "1", 10);
-  const page = isNaN(rawPage) || rawPage < 1 ? 1 : rawPage;
+  const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
   const search = searchParams.get("search") || "";
   const sort = searchParams.get("sort") || "desc";
+  const departemenId = searchParams.get("departemen_id")
+    ? Number(searchParams.get("departemen_id"))
+    : undefined;
+  const jabatanId = searchParams.get("jabatan_id")
+    ? Number(searchParams.get("jabatan_id"))
+    : undefined;
   const itemsPerPage = 10;
 
   const [pegawaiData, setPegawaiData] = useState<PegawaiResponse>({
     data: [],
     totalPages: 0,
-    currentPage: 0,
+    currentPage: 1,
   });
 
-  // ✅ Fetch data di sisi client (browser)
   useEffect(() => {
-    getPegawai(page, itemsPerPage, search, sort, undefined, undefined)
-      .then((res) => setPegawaiData(res))
-      .catch((err) => {
-        console.error("Failed to fetch pegawai data:", err);
-        setPegawaiData({ data: [], totalPages: 0, currentPage: 0 });
+    let mounted = true;
+
+    getPegawai(page, itemsPerPage, search, sort, departemenId, jabatanId)
+      .then((res) => {
+        if (!mounted) return;
+        setPegawaiData({
+          data: res.data ?? [],
+          totalPages: res.totalPages ?? 1,
+          currentPage: res.currentPage ?? page,
+        });
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setPegawaiData({
+          data: [],
+          totalPages: 0,
+          currentPage: 1,
+        });
       });
-  }, [page, search, sort]);
+    return () => {
+      mounted = false;
+    };
+  }, [page, search, sort, departemenId, jabatanId]);
 
   return (
     <EmployeeDataContainer
