@@ -3,32 +3,27 @@
 import { XIcon } from "@phosphor-icons/react";
 import { PegawaiDetail } from "@/types/pegawaiTypes";
 
-interface EmployeeDetailModalProps {
+interface Props {
   data: PegawaiDetail | null;
   onClose: () => void;
 }
 
-interface DetailItemProps {
+function Field({
+  label,
+  value,
+}: {
   label: string;
   value?: string | number | null;
-}
-
-function DetailItem({ label, value }: DetailItemProps) {
+}) {
   return (
-    <div className="space-y-2">
-      <label className="text-sm font-medium">{label}</label>
-
-      <div className="rounded-md border bg-white px-4 py-3 text-sm">
-        {value || "-"}
-      </div>
+    <div className="flex flex-col gap-1 p-3 border-b border-r last:border-r-0">
+      <span className="text-base text-gray-700">{label}</span>
+      <span className="text-base font-medium text-gray-800">{value ?? "-"}</span>
     </div>
   );
 }
 
-export default function EmployeeDetailModal({
-  data,
-  onClose,
-}: EmployeeDetailModalProps) {
+export default function EmployeeDetailModal({ data, onClose }: Props) {
   if (!data) return null;
 
   return (
@@ -37,44 +32,55 @@ export default function EmployeeDetailModal({
       onClick={onClose}
     >
       <div
-        className="flex h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white"
+        className="w-full max-w-5xl bg-white rounded-xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* HEADER */}
         <div className="flex items-center justify-between bg-primary-500 px-6 py-4">
-          <h2 className="text-2xl font-semibold text-white">Detail Pegawai</h2>
-
+          <h2 className="text-white text-2xl font-semibold">Detail Pegawai</h2>
           <button
             onClick={onClose}
-            className="rounded-full p-1 hover:bg-primary-400"
+            className="text-white hover:bg-primary-400 rounded-full p-1"
           >
-            <XIcon size={20} className="text-white" />
+            <XIcon size={20} />
           </button>
         </div>
 
         {/* CONTENT */}
-        <div className="flex-1 overflow-y-auto bg-grey-100 p-6">
-          <div className="rounded-xl border bg-white p-6">
-            <h3 className="mb-6 text-xl font-semibold">Informasi Pegawai</h3>
+        <div className="p-4 overflow-y-auto space-y-6 bg-gray-50">
+          {/* ================= DATA PEGAWAI ================= */}
+          <div className="bg-white rounded-lg border overflow-hidden">
+            <div className="px-2 py-2 border-b bg-gray-100 font-semibold text-lg">
+              Data Pegawai
+            </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <DetailItem label="Nama" value={data.nama} />
-              <DetailItem label="Email" value={data.user?.email} />
-              <DetailItem label="Role" value={data.user?.role} />
-              <DetailItem
+            <div className="grid grid-cols-2 md:grid-cols-3 divide-x divide-y">
+              <Field label="Nama" value={data.nama} />
+              <Field label="NIP" value={data.nip} />
+              <Field label="Tanggal Lahir" value={data.tanggal_lahir} />
+              <Field label="Jenis Kelamin" value={data.jenis_kelamin} />
+              <Field label="Telepon" value={data.telepon} />
+              <Field label="Alamat" value={data.alamat} />
+              <Field label="Departemen" value={data.departemen} />
+              <Field label="Jabatan" value={data.jabatan} />
+            </div>
+          </div>
+
+          {/* ================= DATA AKUN ================= */}
+          <div className="bg-white rounded-lg border overflow-hidden">
+            <div className="px-2 py-2 border-b bg-gray-100 font-semibold text-lg">
+              Data Akun
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 divide-x divide-y">
+              <Field label="Email" value={data.user?.email} />
+
+              <Field label="Role" value={data.user?.role} />
+
+              <Field
                 label="Status Akun"
                 value={data.user?.is_active ? "Aktif" : "Nonaktif"}
               />
-              <DetailItem label="NIP" value={data.nip} />
-              <DetailItem label="Departemen" value={data.departemen} />
-              <DetailItem label="Jabatan" value={data.jabatan} />
-              <DetailItem label="Jenis Kelamin" value={data.jenis_kelamin} />
-              <DetailItem label="Tanggal Lahir" value={data.tanggal_lahir} />
-              <DetailItem label="Nomor Telepon" value={data.telepon} />
-            </div>
-
-            <div className="mt-4">
-              <DetailItem label="Alamat" value={data.alamat} />
             </div>
           </div>
         </div>

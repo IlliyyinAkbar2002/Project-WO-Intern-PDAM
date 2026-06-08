@@ -6,7 +6,7 @@ import {
   PegawaiDetail,
   PegawaiPayload,
   PegawaiMetaResponse,
-  PegawaiCreatePayload
+  PegawaiCreatePayload,
 } from "@/types/pegawaiTypes";
 
 /**
@@ -88,6 +88,7 @@ export const getPegawaiMeta = async (): Promise<PegawaiMetaResponse> => {
     return {
       departemen: response.data.departemen ?? [],
       jabatan: response.data.jabatan ?? [],
+      role: response.data.role ?? [],
     };
   } catch (error) {
     console.error("getPegawaiMeta error:", error);
@@ -96,6 +97,7 @@ export const getPegawaiMeta = async (): Promise<PegawaiMetaResponse> => {
 };
 
 export const createPegawai = async (payload: PegawaiCreatePayload) => {
-  const res = await api.post("/v1/pegawai", payload);
+  // await ensureCsrfToken(); // 🔥 tambah ini untuk safety
+  const res = await api.post("/v1/pegawai-user-create", payload);
   return res.data;
 };

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { PegawaiDetail, PegawaiListItem } from "@/types/pegawaiTypes";
 import { getPegawaiById } from "@/services/pegawaiService";
 import EmployeeDetailModal from "../modals/EmployeeDetailModal";
+import EmployeeFormModal from "../modals/EmployeeFormModal";
 import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/shared/tables/Pagination";
 import { MainTable } from "@/components/shared/tables/MainTable";
@@ -49,16 +50,19 @@ export default function EmployeeDataContainer({
   // STATE
   // =========================
   const [searchText, setSearchText] = useState(search || "");
-  const [loadingDetail, setLoadingDetail] = useState(false);
   const [departemenId, setDepartemenId] = useState<number | undefined>();
   const [jabatanId, setJabatanId] = useState<number | undefined>();
+
   const [departemenOptions, setDepartemenOptions] = useState<Option[]>([]);
   const [jabatanOptions, setJabatanOptions] = useState<Option[]>([]);
+
+  // MODAL STATE (CLEAN & CONSISTENT)
+  const [showCreate, setShowCreate] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [detailData, setDetailData] = useState<PegawaiDetail | null>(null);
 
   // =========================
-  // FETCH FILTER OPTIONS (IMPORTANT FIX)
+  // FETCH FILTER OPTIONS
   // =========================
   useEffect(() => {
     const fetchOptions = async () => {
@@ -70,20 +74,12 @@ export default function EmployeeDataContainer({
         console.error("Failed to load filter options", error);
       }
     };
+
     fetchOptions();
   }, []);
 
   // =========================
-  // MODAL
-  // =========================
-  const openModal = (type: "create") => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("modal", type);
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  };
-
-  // =========================
-  // SEARCH (SERVER SIDE)
+  // SEARCH
   // =========================
   const handleSearchChange = (value: string) => {
     setSearchText(value);
@@ -91,6 +87,7 @@ export default function EmployeeDataContainer({
     const params = new URLSearchParams(searchParams.toString());
     params.set("search", value);
     params.set("page", "1");
+
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
@@ -101,11 +98,12 @@ export default function EmployeeDataContainer({
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", String(page));
     params.set("per_page", String(itemsPerPage));
+
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
   // =========================
-  // FILTER (SERVER SIDE FIXED)
+  // FILTER
   // =========================
   const handleFilter = (key: "departemen" | "jabatan", value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -117,32 +115,16 @@ export default function EmployeeDataContainer({
       if (id) params.set("departemen_id", String(id));
       else params.delete("departemen_id");
     }
+
     if (key === "jabatan") {
       const id = value ? Number(value) : undefined;
       setJabatanId(id);
       if (id) params.set("jabatan_id", String(id));
       else params.delete("jabatan_id");
     }
+
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     router.refresh();
-  };
-
-  // =========================
-  // DETAIL (SERVER SIDE FIXED)
-  // =========================
-  const handleDetail = async (id: number) => {
-    try {
-      setLoadingDetail(true);
-
-      const data = await getPegawaiById(id);
-
-      setDetailData(data);
-      setShowDetail(true);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoadingDetail(false);
-    }
   };
 
   const resetFilter = () => {
@@ -152,7 +134,21 @@ export default function EmployeeDataContainer({
     const params = new URLSearchParams(searchParams.toString());
     params.delete("departemen_id");
     params.delete("jabatan_id");
+
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  // =========================
+  // DETAIL HANDLER
+  // =========================
+  const handleDetail = async (id: number) => {
+    try {
+      const res = await getPegawaiById(id);
+      setDetailData(res);
+      setShowDetail(true);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   // =========================
@@ -185,30 +181,12 @@ export default function EmployeeDataContainer({
       accessorFn: (row) => row.email,
     },
     {
-      header: "Status Akun",
-      accessorFn: (row) => row.is_active,
-      cell: ({ getValue }) => {
-        const active = getValue<boolean>();
-
-        return (
-          <span
-            className={`rounded-full px-3 py-1 text-xs font-semibold ${
-              active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-            }`}
-          >
-            {active ? "Aktif" : "Nonaktif"}
-          </span>
-        );
-      },
-    },
-    {
       header: "Aksi",
       id: "actions",
       cell: ({ row }) => (
         <div className="flex flex-col items-start gap-2">
           <button
-            disabled={loadingDetail}
-            onClick={() => handleDetail(row.original.pegawai.id)}
+            onClick={() => handleDetail(row.original.id)}
             className="flex items-center gap-2 text-sm text-blue-600 hover:underline"
           >
             <EyeIcon size={16} />
@@ -255,7 +233,7 @@ export default function EmployeeDataContainer({
 
           <Button
             variant="primary"
-            onClick={() => openModal("create")}
+            onClick={() => setShowCreate(true)}
             size="sm"
           >
             <PlusIcon size={18} />
@@ -264,7 +242,7 @@ export default function EmployeeDataContainer({
         </div>
       </div>
 
-      {/* FILTER (UI TETAP SAMA) */}
+      {/* FILTER */}
       <div className="flex gap-4 px-4 mb-4">
         <select
           value={departemenId ?? ""}
@@ -301,13 +279,25 @@ export default function EmployeeDataContainer({
       <div className="px-4 pb-4">
         <MainTable columns={columns} data={data} loading={false} />
       </div>
+
+      {/* =========================
+          MODALS
+      ========================= */}
+
+      {showCreate && (
+        <EmployeeFormModal
+          onClose={() => setShowCreate(false)}
+          onSuccess={() => {
+            setShowCreate(false);
+            router.refresh();
+          }}
+        />
+      )}
+
       {showDetail && detailData && (
         <EmployeeDetailModal
           data={detailData}
-          onClose={() => {
-            setShowDetail(false);
-            setDetailData(null);
-          }}
+          onClose={() => setShowDetail(false)}
         />
       )}
     </div>

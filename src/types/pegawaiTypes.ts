@@ -80,7 +80,13 @@ export interface Jabatan {
   nama: string;
 }
 
+export interface Role {
+  id: number;
+  nama: string;
+}
+
 export interface PegawaiMetaResponse {
   departemen: Departemen[];
   jabatan: Jabatan[];
+  role: Role[];
 }
