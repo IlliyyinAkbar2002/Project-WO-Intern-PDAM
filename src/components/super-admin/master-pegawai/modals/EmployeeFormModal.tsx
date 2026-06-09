@@ -1,14 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { XIcon } from "@phosphor-icons/react";
+import { EyeSlashIcon, XIcon } from "@phosphor-icons/react";
 import { api } from "@/lib/api";
 import { PegawaiMetaResponse } from "@/types/pegawaiTypes";
-import { createPegawai } from "@/services/pegawaiService";
+import { createPegawai, getPegawaiById, updatePegawai } from "@/services/pegawaiService";
+import { EyeIcon } from "lucide-react";
 
 interface EmployeeFormModalProps {
   onClose: () => void;
   onSuccess?: () => void;
+  employeeId?: number;
+  isEdit?: boolean;
 }
 
 type FormState = {
@@ -24,8 +27,11 @@ type FormState = {
 export default function EmployeeFormModal({
   onClose,
   onSuccess,
+  employeeId,
+  isEdit = false,
 }: EmployeeFormModalProps) {
   const [loading, setLoading] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   const [meta, setMeta] = useState<PegawaiMetaResponse>({
     departemen: [],
     jabatan: [],
@@ -55,6 +61,34 @@ export default function EmployeeFormModal({
     };
     fetchMeta();
   }, []);
+
+  // =========================
+  // FETCH DETAIL PEGAWAI (EDIT MODE)
+  // =========================
+  useEffect(() => {
+    if (!isEdit || !employeeId) return;
+
+    const fetchDetail = async () => {
+      try {
+        setLoading(true);
+        const data = await getPegawaiById(employeeId);
+        setForm({
+          nama: data.nama ?? "",
+          email: data.user?.email ?? "",
+          password: "",
+          nip: data.nip ?? "",
+          role_id: data.user?.role_id,
+          departemen_id: data.departemen_id,
+          jabatan_id: data.jabatan_id,
+        });
+      } catch (error) {
+        console.error("Failed load employee", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDetail();
+  }, [employeeId, isEdit]);
 
   // =========================
   // HANDLE CHANGE
@@ -87,26 +121,40 @@ export default function EmployeeFormModal({
         !form.departemen_id ||
         !form.jabatan_id ||
         !form.email ||
-        !form.password ||
         !form.nama ||
         !form.nip
       ) {
         throw new Error("Semua field wajib diisi");
       }
-      const payload = {
-        nama: form.nama,
-        email: form.email,
-        password: form.password,
-        nip: form.nip?.trim(),
-        role_id: Number(form.role_id ?? 0),
-        departemen_id: Number(form.departemen_id ?? 0),
-        jabatan_id: Number(form.jabatan_id ?? 0),
-      };
-      await createPegawai(payload);
+      if (isEdit && employeeId) {
+        const payload = {
+          nama: form.nama,
+          email: form.email,
+          nip: form.nip.trim(),
+          role_id: Number(form.role_id),
+          departemen_id: Number(form.departemen_id),
+          jabatan_id: Number(form.jabatan_id),
+        };
+        await updatePegawai(employeeId, payload);
+      } else {
+        const payload = {
+          nama: form.nama,
+          email: form.email,
+          password: form.password,
+          nip: form.nip.trim(),
+          role_id: Number(form.role_id),
+          departemen_id: Number(form.departemen_id),
+          jabatan_id: Number(form.jabatan_id),
+        };
+        await createPegawai(payload);
+      }
       onSuccess?.();
       onClose();
     } catch (error) {
-      console.error("Create employee failed:", error);
+      console.error(
+        isEdit ? "Update employee failed:" : "Create employee failed:",
+        error,
+      );
     } finally {
       setLoading(false);
     }
@@ -118,19 +166,21 @@ export default function EmployeeFormModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl rounded-xl bg-white overflow-hidden"
+        className="w-full max-w-3xl rounded-xl bg-white overflow-hidden max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* HEADER */}
         <div className="flex items-center justify-between bg-primary-500 px-6 py-4">
-          <h2 className="text-lg font-semibold text-white">Tambah Pegawai</h2>
+          <h2 className="text-lg font-semibold text-white">
+            {isEdit ? "Edit Pegawai" : "Tambah Pegawai"}
+          </h2>
           <button onClick={onClose}>
             <XIcon size={20} className="text-white" />
           </button>
         </div>
 
         {/* CONTENT */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
           {/* Nama */}
           <div>
             <label className="text-sm font-medium">Nama</label>
@@ -138,6 +188,7 @@ export default function EmployeeFormModal({
               name="nama"
               value={form.nama}
               onChange={handleChange}
+              placeholder="Masukkan nama lengkap"
               className="w-full border rounded px-3 py-2 mt-1"
               required
             />
@@ -149,6 +200,7 @@ export default function EmployeeFormModal({
               name="nip"
               value={form.nip}
               onChange={handleChange}
+              placeholder="Masukkan NIP"
               className="w-full border rounded px-3 py-2 mt-1"
               required
             />
@@ -161,28 +213,45 @@ export default function EmployeeFormModal({
               type="email"
               value={form.email}
               onChange={handleChange}
+              placeholder="Masukkan email"
               className="w-full border rounded px-3 py-2 mt-1"
               required
             />
           </div>
           {/* Password */}
-          <div>
-            <label className="text-sm font-medium">Password Default</label>
-            <input
-              name="password"
-              type="password"
-              value={form.password}
-              onChange={handleChange}
-              className="w-full border rounded px-3 py-2 mt-1"
-              required
-            />
-          </div>
+          {!isEdit && (
+            <div>
+              <label className="text-sm font-medium">Password</label>
+              <div className="relative mt-1">
+                <input
+                  name="password"
+                  type={isVisible ? "text" : "password"}
+                  value={form.password}
+                  onChange={handleChange}
+                  placeholder="Masukkan password minimal 8 karakter"
+                  className="w-full border rounded px-3 py-2 mt-1"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setIsVisible((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-black hover:text-gray-700"
+                >
+                  {isVisible ? (
+                    <EyeIcon size={24} />
+                  ) : (
+                    <EyeSlashIcon size={24} />
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
           {/* Role */}
           <div>
             <label className="text-sm font-medium">Role</label>
             <select
               name="role_id"
-              value={form.role_id}
+              value={form.role_id ?? ""}
               onChange={handleChange}
               className="w-full border rounded px-3 py-2 mt-1"
               required
@@ -201,7 +270,7 @@ export default function EmployeeFormModal({
             <label className="text-sm font-medium">Departemen</label>
             <select
               name="departemen_id"
-              value={form.departemen_id}
+              value={form.departemen_id ?? ""}
               onChange={handleChange}
               className="w-full border rounded px-3 py-2 mt-1"
               required
@@ -220,7 +289,7 @@ export default function EmployeeFormModal({
             <label className="text-sm font-medium">Jabatan</label>
             <select
               name="jabatan_id"
-              value={form.jabatan_id}
+              value={form.jabatan_id ?? ""}
               onChange={handleChange}
               className="w-full border rounded px-3 py-2 mt-1"
               required
@@ -249,7 +318,13 @@ export default function EmployeeFormModal({
               disabled={loading}
               className="px-4 py-2 bg-primary-500 text-white rounded"
             >
-              {loading ? "Menyimpan..." : "Simpan"}
+              {loading
+                ? isEdit
+                  ? "Memperbarui..."
+                  : "Menyimpan..."
+                : isEdit
+                  ? "Perbarui"
+                  : "Simpan"}
             </button>
           </div>
         </form>

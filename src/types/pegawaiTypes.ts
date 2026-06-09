@@ -46,13 +46,15 @@ export interface PegawaiDetail {
 
 export interface PegawaiPayload {
   nama: string;
+  email: string;
   nip: string;
-  tanggal_lahir: string;
-  jenis_kelamin: string;
-  alamat: string;
-  telepon: string;
+  role_id: number;
   departemen_id: number;
   jabatan_id: number;
+  tanggal_lahir?: string;
+  jenis_kelamin?: string;
+  alamat?: string;
+  telepon?: string;
 }
 
 export interface PegawaiResponse {

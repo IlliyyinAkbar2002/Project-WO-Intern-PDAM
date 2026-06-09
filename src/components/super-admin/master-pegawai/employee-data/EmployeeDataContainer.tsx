@@ -45,21 +45,21 @@ export default function EmployeeDataContainer({
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
-
   // =========================
   // STATE
   // =========================
   const [searchText, setSearchText] = useState(search || "");
   const [departemenId, setDepartemenId] = useState<number | undefined>();
   const [jabatanId, setJabatanId] = useState<number | undefined>();
-
   const [departemenOptions, setDepartemenOptions] = useState<Option[]>([]);
   const [jabatanOptions, setJabatanOptions] = useState<Option[]>([]);
-
   // MODAL STATE (CLEAN & CONSISTENT)
   const [showCreate, setShowCreate] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [detailData, setDetailData] = useState<PegawaiDetail | null>(null);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<
+    number | undefined
+  >();
 
   // =========================
   // FETCH FILTER OPTIONS
@@ -152,6 +152,14 @@ export default function EmployeeDataContainer({
   };
 
   // =========================
+  // EDIT HANDLER
+  // =========================
+  const handleEdit = (id: number) => {
+    setSelectedEmployeeId(id);
+    setShowCreate(true);
+  };
+
+  // =========================
   // TABLE COLUMNS
   // =========================
   const columns: ColumnDef<PegawaiListItem>[] = [
@@ -181,6 +189,24 @@ export default function EmployeeDataContainer({
       accessorFn: (row) => row.email,
     },
     {
+      header: "Status",
+      accessorFn: (row) => row.is_active,
+      cell: ({ row }) => {
+        const isActive = row.original.is_active;
+        return (
+          <span
+            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
+              isActive
+                ? "bg-green-100 text-green-700"
+                : "bg-red-100 text-red-700"
+            }`}
+          >
+            {isActive ? "Aktif" : "Nonaktif"}
+          </span>
+        );
+      },
+    },
+    {
       header: "Aksi",
       id: "actions",
       cell: ({ row }) => (
@@ -193,7 +219,10 @@ export default function EmployeeDataContainer({
             Detail
           </button>
 
-          <button className="flex items-center gap-2 text-sm text-yellow-600 hover:underline">
+          <button
+            onClick={() => handleEdit(row.original.id)}
+            className="flex items-center gap-2 text-sm text-yellow-600 hover:underline"
+          >
             <PencilSimpleIcon size={16} />
             Edit
           </button>
@@ -233,7 +262,10 @@ export default function EmployeeDataContainer({
 
           <Button
             variant="primary"
-            onClick={() => setShowCreate(true)}
+            onClick={() => {
+              setSelectedEmployeeId(undefined);
+              setShowCreate(true);
+            }}
             size="sm"
           >
             <PlusIcon size={18} />
@@ -283,12 +315,17 @@ export default function EmployeeDataContainer({
       {/* =========================
           MODALS
       ========================= */}
-
       {showCreate && (
         <EmployeeFormModal
-          onClose={() => setShowCreate(false)}
+          employeeId={selectedEmployeeId}
+          isEdit={!!selectedEmployeeId}
+          onClose={() => {
+            setShowCreate(false);
+            setSelectedEmployeeId(undefined);
+          }}
           onSuccess={() => {
             setShowCreate(false);
+            setSelectedEmployeeId(undefined);
             router.refresh();
           }}
         />
