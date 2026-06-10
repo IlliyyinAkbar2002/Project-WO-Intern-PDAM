@@ -1,25 +1,30 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { EyeIcon, PencilSimpleIcon, TrashIcon } from "@phosphor-icons/react";
+import {
+  EyeIcon,
+  PencilSimpleIcon,
+  LockIcon,
+  LockOpenIcon,
+} from "@phosphor-icons/react";
 import { Button, Badge } from "@/components/ui";
 import StatusBadge from "@/components/shared/StatusBadge";
 import { Workorder } from "@/types/workorderTypes";
 import Swal from "sweetalert2";
-import { deleteWorkorder } from "@/services/workorderService";
+import { toggleWorkorderStatus } from "@/services/workorderService";
 
 interface ColumnsProps {
   openModal: (modal: "detail" | "edit", id: number) => void;
   currentPage: number;
   itemsPerPage: number;
-  refreshData?: () => void;
+  setTableData: React.Dispatch<React.SetStateAction<Workorder[]>>;
 }
 
 export const columns = ({
   openModal,
   currentPage,
   itemsPerPage,
-  refreshData,
+  setTableData,
 }: ColumnsProps): ColumnDef<Workorder>[] => [
   {
     header: "No",
@@ -40,7 +45,7 @@ export const columns = ({
   },
   {
     accessorKey: "status",
-    header: "Status",
+    header: "Status Pengerjaan",
     cell: ({ row }) => <StatusBadge status={row.original.status} />,
   },
   {
@@ -67,26 +72,42 @@ export const columns = ({
     },
   },
   {
+    header: "Status",
+    accessorFn: (row) => row.isActive,
+    cell: ({ row }) => (
+      <span
+        className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
+          row.original.isActive
+            ? "bg-green-100 text-green-700"
+            : "bg-red-100 text-red-700"
+        }`}
+      >
+        {row.original.isActive ? "Aktif" : "Nonaktif"}
+      </span>
+    ),
+  },
+  {
     id: "actions",
     header: "Aksi",
-
     cell: ({ row }) => {
-      const handleDelete = async () => {
+      // Toogle status workorder aktif/nonaktif
+      const handleToggleStatus = async () => {
+        const isActive = row.original.isActive;
         const result = await Swal.fire({
-          title: "Hapus Workorder?",
-          text: "Data workorder akan dihapus permanen.",
+          title: isActive ? "Nonaktifkan Workorder?" : "Aktifkan Workorder?",
+          text: isActive
+            ? "Workorder tidak akan dapat digunakan."
+            : "Workorder akan aktif kembali.",
           icon: "warning",
           showCancelButton: true,
-          confirmButtonText: "Ya, Hapus",
+          confirmButtonText: isActive ? "Ya, Nonaktifkan" : "Ya, Aktifkan",
           cancelButtonText: "Batal",
-          confirmButtonColor: "#d33",
         });
 
         if (!result.isConfirmed) return;
-
         try {
           Swal.fire({
-            title: "Menghapus workorder...",
+            title: "Memproses...",
             text: "Mohon tunggu",
             allowOutsideClick: false,
             didOpen: () => {
@@ -94,17 +115,26 @@ export const columns = ({
             },
           });
 
-          await deleteWorkorder(row.original.id);
+          const response = await toggleWorkorderStatus(row.original.id);
+
+          setTableData((prev) =>
+            prev.map((item) =>
+              item.id === row.original.id
+                ? {
+                    ...item,
+                    isActive: !item.isActive,
+                  }
+                : item,
+            ),
+          );
 
           Swal.fire({
             icon: "success",
             title: "Berhasil",
-            text: "Workorder berhasil dihapus",
+            text: response.message,
             timer: 1500,
             showConfirmButton: false,
           });
-
-          refreshData?.();
         } catch (error) {
           Swal.fire({
             icon: "error",
@@ -112,11 +142,12 @@ export const columns = ({
             text:
               error instanceof Error
                 ? error.message
-                : "Gagal menghapus workorder",
+                : "Gagal mengubah status workorder",
           });
         }
       };
 
+      // Edit workorder
       const handleEdit = () => {
         Swal.fire({
           title: "Memuat data workorder...",
@@ -126,7 +157,6 @@ export const columns = ({
             Swal.showLoading();
           },
         });
-
         openModal("edit", row.original.id);
       };
 
@@ -144,8 +174,19 @@ export const columns = ({
             <PencilSimpleIcon size={18} />
           </Button>
 
-          <Button variant="outline" size="sm" onClick={handleDelete}>
-            <TrashIcon size={18} />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleToggleStatus}
+            className={
+              row.original.isActive ? "text-red-600" : "text-green-600"
+            }
+          >
+            {row.original.isActive ? (
+              <LockIcon size={18} />
+            ) : (
+              <LockOpenIcon size={18} />
+            )}
           </Button>
         </div>
       );

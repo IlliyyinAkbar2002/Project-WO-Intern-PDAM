@@ -25,6 +25,7 @@ export interface WorkorderBase {
 
 export interface Workorder extends WorkorderBase {
   id: number;
+  isActive: boolean;
   createdAt?: string;
   updatedAt?: string;
   kategori?: KategoriWorkorder | null;

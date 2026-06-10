@@ -14,7 +14,6 @@ export const createMaterial = async (data: any) => {
     if (!response?.data?.material) {
       throw new Error("Response backend tidak valid.");
     }
-
     return response.data.material;
   } catch (error: any) {
     console.error("Failed to create material:", error);
@@ -25,9 +24,13 @@ export const createMaterial = async (data: any) => {
       const errorMessages = Object.values(respData.errors).flat().join(", ");
       throw new Error(errorMessages);
     }
-
     throw new Error(respData?.message || "Gagal menambahkan data material.");
   }
+};
+
+export const generateMaterialCode = async () => {
+  const response = await api.get("/v1/material/generate-code");
+  return response.data.kode_material;
 };
 
 export const getMaterials = async (): Promise<Material[]> => {

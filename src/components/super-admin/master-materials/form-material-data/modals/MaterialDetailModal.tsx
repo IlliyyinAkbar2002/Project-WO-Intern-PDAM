@@ -5,27 +5,28 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { XIcon } from "@phosphor-icons/react";
-import { toast } from "sonner";
 import {
   getMaterialById,
   updateMaterial,
   editMaterial,
 } from "@/services/materialService";
 import { Material } from "@/types/materialTypes";
+import Swal from "sweetalert2";
 
 interface MaterialDetailModalProps {
   onClose?: () => void;
+  onSuccess?: (material: Material) => void;
 }
 
 export default function MaterialDetailModal({
   onClose,
+  onSuccess,
 }: MaterialDetailModalProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const submodal = searchParams.get("submodal");
   const submodalId = searchParams.get("submodal_id");
-  const mode = submodal === "detail"; // detail = readonly, edit = editable
-
+  const mode = submodal === "detail";
   const [material, setMaterial] = useState<Material | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -38,7 +39,11 @@ export default function MaterialDetailModal({
         setMaterial(data);
       } catch (err) {
         console.error(err);
-        toast.error("Gagal mengambil data material");
+        Swal.fire({
+          icon: "error",
+          title: "Gagal",
+          text: "Gagal mengambil data material",
+        });
         closeModal();
       }
     };
@@ -56,29 +61,65 @@ export default function MaterialDetailModal({
   const handleSave = async () => {
     if (!material) return;
     if (!material.nama || material.nama.trim() === "") {
-      toast.error("Nama material wajib diisi");
+      Swal.fire({
+        icon: "warning",
+        title: "Validasi",
+        text: "Nama material wajib diisi",
+      });
       return;
     }
+
+    const result = await Swal.fire({
+      title: "Simpan Perubahan?",
+      text: "Data material akan diperbarui",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Ya, Simpan",
+      cancelButtonText: "Batal",
+    });
+
+    if (!result.isConfirmed) return;
+
     try {
       setIsSubmitting(true);
-      // Jika mode edit, gunakan endpoint edit jika tersedia
+      Swal.fire({
+        title: "Memperbarui material...",
+        text: "Mohon tunggu",
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+      });
+
+      let updatedMaterial: Material;
+
       if (searchParams.get("submodal") === "edit") {
-        await editMaterial(material.kode_material, {
+        updatedMaterial = await editMaterial(material.kode_material, {
           nama: material.nama,
           jumlah_stok: material.jumlah_stok,
         });
       } else {
-        await updateMaterial(material.kode_material, {
+        updatedMaterial = await updateMaterial(material.kode_material, {
           nama: material.nama,
           jumlah_stok: material.jumlah_stok,
         });
       }
-      toast.success("Data material berhasil diperbarui");
-      router.refresh();
+      onSuccess?.(updatedMaterial);
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil",
+        text: "Data material berhasil diperbarui",
+        timer: 1500,
+        showConfirmButton: false,
+      });
       closeModal();
     } catch (err: any) {
       console.error(err);
-      toast.error(err.message || "Gagal memperbarui data material");
+      Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: err.message || "Gagal memperbarui data material",
+      });
     } finally {
       setIsSubmitting(false);
     }

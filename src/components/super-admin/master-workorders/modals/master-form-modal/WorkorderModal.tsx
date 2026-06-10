@@ -17,7 +17,7 @@ import { getPegawai } from "@/services/pegawaiService";
 import { getPengaduan } from "@/services/pengaduanService";
 import { getJenisWorkorders } from "@/services/jenisWorkorderService";
 import { JenisWorkorder, KategoriWorkorder } from "@/types/jenisWorkorderTypes";
-import { WorkorderInput, PrioritasWorkorder } from "@/types/workorderTypes";
+import { WorkorderInput, PrioritasWorkorder, Workorder } from "@/types/workorderTypes";
 import { PegawaiListItem } from "@/types/pegawaiTypes";
 import Swal from "sweetalert2";
 
@@ -26,6 +26,7 @@ interface MasterFormModalProps {
   id?: string | null;
   kodePengaduan?: string | null;
   onClose: () => void;
+  onSuccess?: (workorder: Workorder) => void;
 }
 
 interface SelectOption {
@@ -82,6 +83,7 @@ export default function WorkorderModal({
   modal,
   id,
   onClose,
+  onSuccess,
 }: MasterFormModalProps) {
   const router = useRouter();
   const isCreate = modal === "create";
@@ -259,8 +261,11 @@ export default function WorkorderModal({
         status: formData.status,
       };
 
+      let savedWorkorder: Workorder;
+
       if (id && isEdit) {
         await updateWorkorder(id, payload);
+        savedWorkorder = await getWorkorderById(id);
         Swal.fire({
           icon: "success",
           title: "Berhasil",
@@ -269,7 +274,7 @@ export default function WorkorderModal({
           showConfirmButton: false,
         });
       } else {
-        await createWorkorder(payload);
+        savedWorkorder = await createWorkorder(payload);
         Swal.fire({
           icon: "success",
           title: "Berhasil",
@@ -278,8 +283,8 @@ export default function WorkorderModal({
           showConfirmButton: false,
         });
       }
+      onSuccess?.(savedWorkorder);
       onClose();
-      router.refresh();
     } catch (error) {
       console.error(error);
       Swal.fire({

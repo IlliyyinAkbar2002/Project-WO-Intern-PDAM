@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,9 +12,8 @@ import SingleSelect from "@/components/shared/fields/SingleSelect";
 import { sortOptions } from "@/constants/options";
 import { Material } from "@/types/materialTypes";
 import MaterialDetailModal from "./modals/MaterialDetailModal";
-import ConfirmModal from "@/components/shared/modals/ConfirmModal";
 import { deleteMaterial } from "@/services/materialService";
-import { toast } from "sonner";
+import Swal from "sweetalert2";
 
 interface MaterialDataContainerProps {
   data: Material[];
@@ -37,10 +36,7 @@ export default function MaterialDataContainer({
   const searchParams = useSearchParams();
   const [sortData, setSortData] = useState(sort);
   const [searchText, setSearchText] = useState(search || "");
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-
+  const [tableData, setTableData] = useState(data);
   // ✅ Search realtime
   const handleSearchChange = (value: string) => {
     setSearchText(value);
@@ -48,23 +44,24 @@ export default function MaterialDataContainer({
     params.set("search", value);
     router.push(`?${params.toString()}`);
   };
-
   // ✅ Pagination
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", newPage.toString());
     router.push(`?${params.toString()}`);
   };
-
   //Sort data
   const handleSortChange = (selected: { value: string } | null) => {
     const sortValue = selected ? selected.value : "";
     setSortData(sortValue);
-
     const params = new URLSearchParams(searchParams);
     params.set("sort", sortValue);
     router.push(`?${params.toString()}`);
   };
+
+  useEffect(() => {
+    setTableData(data);
+  }, [data]);
 
   //Kolom tabel (pakai ColumnDef agar cocok dengan MainTable)
   const columns: ColumnDef<Material>[] = [
@@ -116,9 +113,52 @@ export default function MaterialDataContainer({
           </button>
           <button
             className="text-sm text-red-600 hover:underline flex items-center gap-1"
-            onClick={() => {
-              setDeletingId(row.original.kode_material);
-              setShowConfirmModal(true);
+            onClick={async () => {
+              const result = await Swal.fire({
+                title: "Hapus Material?",
+                text: "Data yang dihapus tidak dapat dikembalikan",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#dc2626",
+                confirmButtonText: "Ya, Hapus",
+                cancelButtonText: "Batal",
+              });
+
+              if (!result.isConfirmed) return;
+
+              try {
+                Swal.fire({
+                  title: "Menghapus material...",
+                  text: "Mohon tunggu",
+                  allowOutsideClick: false,
+                  didOpen: () => {
+                    Swal.showLoading();
+                  },
+                });
+
+                await deleteMaterial(row.original.kode_material);
+
+                Swal.fire({
+                  icon: "success",
+                  title: "Berhasil",
+                  text: "Material berhasil dihapus",
+                  timer: 1500,
+                  showConfirmButton: false,
+                });
+                setTableData((prev) =>
+                  prev.filter(
+                    (item) => item.kode_material !== row.original.kode_material,
+                  ),
+                );
+              } catch (err: any) {
+                console.error(err);
+
+                Swal.fire({
+                  icon: "error",
+                  title: "Gagal",
+                  text: err.message || "Gagal menghapus material",
+                });
+              }
             }}
           >
             🚫 <span>Delete</span>
@@ -170,40 +210,27 @@ export default function MaterialDataContainer({
 
       {/* ✅ Tabel utama */}
       <div className="px-4 pb-4 bg-transparent">
-        <MainTable columns={columns} data={data} loading={false} />
+        <MainTable columns={columns} data={tableData} loading={false} />
       </div>
       {(() => {
         const submodal = searchParams.get("submodal");
         if (submodal === "detail" || submodal === "edit") {
-          return <MaterialDetailModal />;
+          return (
+            <MaterialDetailModal
+              onSuccess={(updatedMaterial) => {
+                setTableData((prev) =>
+                  prev.map((item) =>
+                    item.kode_material === updatedMaterial.kode_material
+                      ? updatedMaterial
+                      : item,
+                  ),
+                );
+              }}
+            />
+          );
         }
         return null;
       })()}
-      <ConfirmModal
-        open={showConfirmModal}
-        onClose={() => setShowConfirmModal(false)}
-        onConfirm={async () => {
-          if (!deletingId) return;
-          try {
-            setIsDeleting(true);
-            await deleteMaterial(deletingId);
-            toast.success("Material berhasil dihapus");
-            setShowConfirmModal(false);
-            setDeletingId(null);
-            router.refresh();
-          } catch (err) {
-            console.error(err);
-            toast.error("Gagal menghapus material");
-          } finally {
-            setIsDeleting(false);
-          }
-        }}
-        title="Hapus Material"
-        description="Anda yakin ingin menghapus material ini? Tindakan ini tidak dapat dibatalkan."
-        confirmText="Hapus"
-        variant="danger"
-        loading={isDeleting}
-      />
     </div>
   );
 }

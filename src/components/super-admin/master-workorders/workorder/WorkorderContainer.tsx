@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PlusIcon } from "@phosphor-icons/react";
 import { MainTable } from "@/components/shared/tables/MainTable";
@@ -51,6 +51,7 @@ export default function WorkorderContainer({
   // LOCAL STATE
   // =========================================================
   const [searchText, setSearchText] = useState(search);
+  const [tableData, setTableData] = useState(data);
 
   // =========================================================
   // SELECTED DATA
@@ -59,7 +60,7 @@ export default function WorkorderContainer({
     if (!modalId) return null;
 
     return data.find((item) => item.id === Number(modalId)) || null;
-  }, [data, modalId]);
+  }, [tableData, modalId]);
 
   // =========================================================
   // OPEN MODAL
@@ -91,7 +92,6 @@ export default function WorkorderContainer({
     router.replace(`?${params.toString()}`, {
       scroll: false,
     });
-    router.refresh();
   };
 
   // =========================================================
@@ -120,6 +120,13 @@ export default function WorkorderContainer({
     params.set("page", String(page));
     router.push(`?${params.toString()}`);
   };
+
+  // =========================================================
+  // Use effect untuk update table data ketika props data berubah
+  // =========================================================
+  useEffect(() => {
+    setTableData(data);
+  }, [data]);
 
   return (
     <div className="mx-28 overflow-hidden rounded-xl bg-white">
@@ -164,8 +171,9 @@ export default function WorkorderContainer({
           openModal,
           currentPage,
           itemsPerPage,
+          setTableData,
         })}
-        data={data}
+        data={tableData}
         loading={false}
       />
 
@@ -178,6 +186,17 @@ export default function WorkorderContainer({
           id={modalId}
           kodePengaduan={kodePengaduan}
           onClose={closeModal}
+          onSuccess={(workorder) => {
+            setTableData((prev) => {
+              const exists = prev.some((x) => x.id === workorder.id);
+
+              if (exists) {
+                return prev.map((x) => (x.id === workorder.id ? workorder : x));
+              }
+
+              return [workorder, ...prev];
+            });
+          }}
         />
       )}
 

@@ -47,6 +47,7 @@ export const getWorkorders = async (
     const response = await api.get("/v1/workorder", {
       params: toSnakeCase(params),
     });
+
     const data = toCamelCase(response.data);
     return {
       ...data,
@@ -73,11 +74,13 @@ export const getWorkorderById = async (id: string): Promise<Workorder> => {
 // =========================================================
 // CREATE
 // =========================================================
-export const createWorkorder = async (data: WorkorderInput) => {
+export const createWorkorder = async (
+  data: WorkorderInput,
+): Promise<Workorder> => {
   try {
     const response = await api.post("/v1/workorder", toSnakeCase(data));
 
-    return toCamelCase(response.data);
+    return mapWorkorder(toCamelCase(response.data.data));
   } catch (error) {
     throw handleApiError(error, "Gagal menambah workorder.");
   }
@@ -89,11 +92,11 @@ export const createWorkorder = async (data: WorkorderInput) => {
 export const updateWorkorder = async (
   id: string,
   data: Partial<WorkorderInput>,
-) => {
+): Promise<Workorder> => {
   try {
     const response = await api.put(`/v1/workorder/${id}`, toSnakeCase(data));
 
-    return toCamelCase(response.data);
+    return mapWorkorder(toCamelCase(response.data.data));
   } catch (error) {
     throw handleApiError(error, "Gagal memperbarui workorder.");
   }
@@ -113,15 +116,17 @@ export const updateWorkorderStatus = async (id: string, status: string) => {
 };
 
 // =========================================================
-// DELETE
+// UPDATE STATUS (TOGGLE)
 // =========================================================
-export const deleteWorkorder = async (id: number) => {
+export const toggleWorkorderStatus = async (id: number) => {
   try {
-    const response = await api.delete(`/v1/workorder/${id}`);
+    const response = await api.patch(`/v1/workorder/${id}/toggle-status`);
 
-    return toCamelCase(response.data);
-  } catch (error) {
-    throw handleApiError(error, "Gagal menghapus workorder.");
+    return response.data;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.error ?? "Gagal mengubah status workorder.",
+    );
   }
 };
 

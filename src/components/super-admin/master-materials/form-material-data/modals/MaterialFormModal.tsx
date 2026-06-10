@@ -7,6 +7,7 @@ import SingleSelect from "@/components/shared/fields/SingleSelect";
 import { getUsers } from "@/services/userService";
 import { createMaterial, getMaterials } from "@/services/materialService";
 import { toast } from "sonner";
+import Swal from "sweetalert2";
 
 interface MaterialFormModalProps {
   onClose?: () => void;
@@ -33,6 +34,20 @@ export default function MaterialFormModal({ onClose }: MaterialFormModalProps) {
       .catch(() => setUsersOptions([]));
   }, []);
 
+  const handleGenerateCode = async () => {
+    try {
+      const materials = await getMaterials();
+      const lastCode =
+        materials.length > 0
+          ? Math.max(...materials.map((m) => Number(m.kode_material || 0)))
+          : 0;
+      setKodeMaterial(lastCode + 1);
+    } catch (error) {
+      console.error(error);
+      toast.error("Gagal membuat kode material");
+    }
+  };
+
   const handleSubmit = async () => {
     if (!nama.trim()) {
       toast.error("Isi nama material terlebih dahulu");
@@ -49,12 +64,10 @@ export default function MaterialFormModal({ onClose }: MaterialFormModalProps) {
       toast.error("Kode material wajib diisi");
       return;
     }
-
     if (!nama.trim()) {
       toast.error("Nama material wajib diisi");
       return;
     }
-
     if (!jumlahStok) {
       toast.error("Jumlah stok wajib diisi");
       return;
@@ -62,14 +75,33 @@ export default function MaterialFormModal({ onClose }: MaterialFormModalProps) {
 
     try {
       setIsSubmitting(true);
+      Swal.fire({
+        title: "Menyimpan material...",
+        text: "Mohon tunggu",
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+      });
+
       await createMaterial(payload);
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil",
+        text: "Material berhasil ditambahkan",
+        timer: 1500,
+        showConfirmButton: false,
+      });
       toast.success("Material berhasil ditambahkan");
-      // Close or navigate back to list
       if (onClose) onClose();
       else router.push("/protected/super-admin/master-materials/material-data");
       router.refresh();
     } catch (error) {
-      toast.error("Gagal menyimpan data material");
+      Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: "Gagal menyimpan data material",
+      });
       console.error(error);
     } finally {
       setIsSubmitting(false);
@@ -93,12 +125,31 @@ export default function MaterialFormModal({ onClose }: MaterialFormModalProps) {
               value={nama}
               onChange={(e) => setNama(e.target.value)}
             />
-            <Input
-              label="Kode"
-              placeholder="Kode material"
-              value={kodeMaterial || ""}
-              onChange={(e) => setKodeMaterial(Number(e.target.value || 0))}
-            />
+            <div>
+              <label className="mb-2 block text-sm font-medium">
+                Kode Material
+              </label>
+
+              <div className="flex items-end gap-3">
+                <div className="w-48">
+                  <Input
+                    value={kodeMaterial || ""}
+                    disabled
+                    placeholder="Otomatis"
+                    className="bg-slate-100 font-medium"
+                  />
+                </div>
+
+                <Button
+                  type="button"
+                  variant="primary"
+                  onClick={handleGenerateCode}
+                  className="px-6"
+                >
+                  Generate
+                </Button>
+              </div>
+            </div>
             <Input
               label="Jumlah Stok"
               placeholder="Stok material"
