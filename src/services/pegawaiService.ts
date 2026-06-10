@@ -97,7 +97,7 @@ export const getPegawaiMeta = async (): Promise<PegawaiMetaResponse> => {
 };
 
 export const createPegawai = async (payload: PegawaiCreatePayload) => {
-  // await ensureCsrfToken(); // 🔥 tambah ini untuk safety
+  // await ensureCsrfToken();
   const res = await api.post("/v1/pegawai-user-create", payload);
   return res.data;
 };

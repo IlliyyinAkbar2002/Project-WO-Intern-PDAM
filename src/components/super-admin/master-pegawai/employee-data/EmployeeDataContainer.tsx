@@ -19,6 +19,8 @@ import {
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
+import { toggleUserStatus } from "@/services";
+import Swal from "sweetalert2";
 
 interface EmployeeDataContainerProps {
   data: PegawaiListItem[];
@@ -49,6 +51,7 @@ export default function EmployeeDataContainer({
   // STATE
   // =========================
   const [searchText, setSearchText] = useState(search || "");
+  const [tableData, setTableData] = useState(data);
   const [departemenId, setDepartemenId] = useState<number | undefined>();
   const [jabatanId, setJabatanId] = useState<number | undefined>();
   const [departemenOptions, setDepartemenOptions] = useState<Option[]>([]);
@@ -60,6 +63,13 @@ export default function EmployeeDataContainer({
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<
     number | undefined
   >();
+
+  // =========================
+  // SYNC DATA DARI SERVER
+  // =========================
+  useEffect(() => {
+    setTableData(data);
+  }, [data]);
 
   // =========================
   // FETCH FILTER OPTIONS
@@ -115,14 +125,12 @@ export default function EmployeeDataContainer({
       if (id) params.set("departemen_id", String(id));
       else params.delete("departemen_id");
     }
-
     if (key === "jabatan") {
       const id = value ? Number(value) : undefined;
       setJabatanId(id);
       if (id) params.set("jabatan_id", String(id));
       else params.delete("jabatan_id");
     }
-
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     router.refresh();
   };
@@ -157,6 +165,54 @@ export default function EmployeeDataContainer({
   const handleEdit = (id: number) => {
     setSelectedEmployeeId(id);
     setShowCreate(true);
+  };
+
+  // =========================
+  // TOGGLE STATUS HANDLER
+  // =========================
+  const handleToggleStatus = async (
+    userId?: number | null,
+    isActive?: boolean,
+  ) => {
+    if (!userId) return;
+    const result = await Swal.fire({
+      title: isActive ? "Nonaktifkan akun?" : "Aktifkan akun?",
+      text: isActive
+        ? "Apakah anda yakin untuk menonaktifkan akun ini?"
+        : "Apakah anda yakin untuk mengaktifkan akun ini?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Ya",
+      cancelButtonText: "Batal",
+    });
+
+    if (!result.isConfirmed) return;
+    try {
+      const response = await toggleUserStatus(userId);
+      setTableData((prev) =>
+        prev.map((item) =>
+          item.user_id === userId
+            ? {
+                ...item,
+                is_active: response.is_active,
+              }
+            : item,
+        ),
+      );
+      await Swal.fire({
+        icon: "success",
+        title: "Berhasil",
+        text: response.message,
+        timer: 1500,
+        showConfirmButton: false,
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: error instanceof Error ? error.message : "Terjadi kesalahan",
+      });
+    }
   };
 
   // =========================
@@ -232,9 +288,16 @@ export default function EmployeeDataContainer({
             Reset Password
           </button>
 
-          <button className="flex items-center gap-2 text-sm text-red-600 hover:underline">
+          <button
+            onClick={() =>
+              handleToggleStatus(row.original.user_id, row.original.is_active)
+            }
+            className={`flex items-center gap-2 text-sm hover:underline ${
+              row.original.is_active ? "text-red-600" : "text-green-600"
+            }`}
+          >
             <UserMinusIcon size={16} />
-            Disable
+            {row.original.is_active ? "Disable" : "Enable"}
           </button>
         </div>
       ),
@@ -309,7 +372,7 @@ export default function EmployeeDataContainer({
 
       {/* TABLE */}
       <div className="px-4 pb-4">
-        <MainTable columns={columns} data={data} loading={false} />
+        <MainTable columns={columns} data={tableData} loading={false} />
       </div>
 
       {/* =========================

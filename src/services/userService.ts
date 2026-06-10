@@ -1,5 +1,6 @@
 import { api } from "@/lib/api";
 import { User } from "@/types/userTypes";
+import axios from "axios";
 
 export const getUsers = async (): Promise<User[]> => {
   try {
@@ -19,12 +20,25 @@ export const resetUserPassword = async (id: number) => {
   }
 };
 
-export const toggleUserStatus = async (id: number) => {
+export interface ToggleUserStatusResponse {
+  message: string;
+  is_active: boolean;
+  user_id: number;
+}
+
+export const toggleUserStatus = async (
+  id: number,
+): Promise<ToggleUserStatusResponse> => {
   try {
     const response = await api.patch(`/v1/users/${id}/toggle-status`);
     return response.data;
   } catch (error) {
-    throw new Error("Gagal mengubah status user.");
+    if (axios.isAxiosError(error)) {
+      throw new Error(
+        error.response?.data?.error ?? "Gagal mengubah status user.",
+      );
+    }
+    throw new Error("Terjadi kesalahan yang tidak diketahui.");
   }
 };
 

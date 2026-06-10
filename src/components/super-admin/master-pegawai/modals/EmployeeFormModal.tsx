@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { PegawaiMetaResponse } from "@/types/pegawaiTypes";
 import { createPegawai, getPegawaiById, updatePegawai } from "@/services/pegawaiService";
 import { EyeIcon } from "lucide-react";
+import Swal from "sweetalert2";
 
 interface EmployeeFormModalProps {
   onClose: () => void;
@@ -136,6 +137,13 @@ export default function EmployeeFormModal({
           jabatan_id: Number(form.jabatan_id),
         };
         await updatePegawai(employeeId, payload);
+        await Swal.fire({
+          icon: "success",
+          title: "Berhasil",
+          text: "Data pegawai berhasil diperbarui",
+          timer: 1500,
+          showConfirmButton: false,
+        });
       } else {
         const payload = {
           nama: form.nama,
@@ -147,14 +155,25 @@ export default function EmployeeFormModal({
           jabatan_id: Number(form.jabatan_id),
         };
         await createPegawai(payload);
+        await Swal.fire({
+          icon: "success",
+          title: "Berhasil",
+          text: "Data pegawai berhasil ditambahkan",
+          timer: 1500,
+          showConfirmButton: false,
+        });
       }
       onSuccess?.();
       onClose();
     } catch (error) {
-      console.error(
-        isEdit ? "Update employee failed:" : "Create employee failed:",
-        error,
-      );
+      Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text:
+          error instanceof Error
+            ? error.message
+            : "Terjadi kesalahan saat menyimpan data",
+      });
     } finally {
       setLoading(false);
     }
