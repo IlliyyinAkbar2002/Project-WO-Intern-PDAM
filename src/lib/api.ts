@@ -1,12 +1,19 @@
 import axios from "axios";
 import Cookies from "js-cookie";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api";
-const SANCTUM_URL = process.env.NEXT_PUBLIC_SANCTUM_URL || "http://127.0.0.1:8000";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://dimissory-unpervading-leonarda.ngrok-free.dev/api";
+const SANCTUM_URL =
+  process.env.NEXT_PUBLIC_SANCTUM_URL ||
+  "https://dimissory-unpervading-leonarda.ngrok-free.dev";
+// const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api";
+// const SANCTUM_URL = process.env.NEXT_PUBLIC_SANCTUM_URL || "http://127.0.0.1:8000";
 
 const api = axios.create({
   baseURL: API_BASE,
   headers: {
+    "ngrok-skip-browser-warning": "true",
     "Content-Type": "application/json",
     Accept: "application/json",
   },
@@ -23,8 +30,9 @@ export const ensureCsrfToken = async () => {
       .get(`${SANCTUM_URL}/sanctum/csrf-cookie`, {
         withCredentials: true,
         headers: {
-          "Accept": "application/json",
+          Accept: "application/json",
           "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
         },
       })
       .then(() => {
@@ -37,7 +45,6 @@ export const ensureCsrfToken = async () => {
         throw error;
       });
   }
-
   return csrfPromise;
 };
 
@@ -57,7 +64,9 @@ api.interceptors.request.use((config) => {
 api.interceptors.request.use(async (config) => {
   if (typeof window !== "undefined") {
     // Only get CSRF token for state-changing requests
-    const needsCsrf = ['post', 'put', 'patch', 'delete'].includes(config.method?.toLowerCase() || '');
+    const needsCsrf = ["post", "put", "patch", "delete"].includes(
+      config.method?.toLowerCase() || "",
+    );
 
     if (needsCsrf) {
       try {

@@ -62,7 +62,10 @@ const menuItems: Record<string, MenuItem[]> = {
           label: "Data Pegawai",
           href: `${baseSuperAdminPath}/master-pegawai/employee-data`,
         },
-        { label: "Monitoring", href: `${baseSuperAdminPath}/master-formulir/monitoring` },
+        {
+          label: "Monitoring",
+          href: `${baseSuperAdminPath}/master-formulir/monitoring`,
+        },
       ],
     },
     {
@@ -118,6 +121,11 @@ const menuItems: Record<string, MenuItem[]> = {
       title: "Dashboard",
       icon: <PulseIcon size={24} className="text-primary-500" />,
       href: baseAdminPath,
+    },
+    {
+      title: "List Pengaduan",
+      icon: <AddressBookIcon size={24} className="text-primary-500" />,
+      href: `${baseAdminPath}/pengaduan`,
     },
     {
       title: "Buat Workorder",

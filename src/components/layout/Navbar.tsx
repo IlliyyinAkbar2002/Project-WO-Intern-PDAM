@@ -1,17 +1,58 @@
 "use client";
 
-import { BellIcon, UserIcon } from "@phosphor-icons/react";
+import { BellIcon, UserIcon, CaretDownIcon } from "@phosphor-icons/react";
 import Image from "next/image";
 import Link from "next/link";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Cookies from "js-cookie";
 
 interface NavbarProps {
   roleName: string;
 }
 
-export default function Navbar({roleName }: NavbarProps) {
+export default function Navbar({ roleName }: NavbarProps) {
+  const router = useRouter();
+  const [openProfileMenu, setOpenProfileMenu] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // =====================================================
+  // CLOSE DROPDOWN WHEN CLICK OUTSIDE
+  // =====================================================
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setOpenProfileMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // =====================================================
+  // LOGOUT
+  // =====================================================
+  const handleLogout = () => {
+    Cookies.remove("token");
+    Cookies.remove("role_name");
+    Cookies.remove("user_id");
+    Cookies.remove("departemen_id");
+
+    router.push("/login");
+  };
+
   return (
-    <div className="flex h-full w-full justify-between items-center bg-standardWhite border-b-2 border-grey-300 text-primary-500 py-4 px-12">
+    <div className="flex h-full w-full items-center justify-between border-b-2 border-grey-300 bg-standardWhite px-12 py-4 text-primary-500">
+      {/* ================================================= */}
+      {/* LOGO */}
+      {/* ================================================= */}
       <Link
         href="https://www.pdam-sby.go.id/"
         target="_blank"
@@ -26,19 +67,87 @@ export default function Navbar({roleName }: NavbarProps) {
         />
       </Link>
 
+      {/* ================================================= */}
+      {/* RIGHT SECTION */}
+      {/* ================================================= */}
       <div className="flex items-center space-x-4">
-        <span className="font-semibold text-primary-500 capitalize">
+        <span className="font-semibold capitalize text-primary-500">
           {roleName}
         </span>
 
-        <Link href="#profile" className="cursor-pointer">
-          <UserIcon size={26} />
-        </Link>
-        <div>Profile</div>
+        {/* ============================================= */}
+        {/* PROFILE DROPDOWN */}
+        {/* ============================================= */}
+        <div className="relative" ref={dropdownRef}>
+          <button
+            type="button"
+            onClick={() => setOpenProfileMenu((prev) => !prev)}
+            className="flex items-center gap-2 rounded-lg px-2 py-1 transition hover:bg-grey-100"
+          >
+            <UserIcon size={26} />
 
-        <div>
-          <BellIcon size={26} />
+            <span>Profile</span>
+
+            <CaretDownIcon
+              size={16}
+              className={`transition-transform ${
+                openProfileMenu ? "rotate-180" : ""
+              }`}
+            />
+          </button>
+
+          {openProfileMenu && (
+            <div className="absolute right-0 top-12 z-50 w-56 overflow-hidden rounded-lg border border-grey-200 bg-white shadow-lg">
+              {/* HEADER */}
+              <div className="border-b border-grey-200 px-4 py-3">
+                <p className="font-semibold text-grey-900">Akun Saya</p>
+                <p className="text-xs capitalize text-grey-500">
+                  {roleName}
+                </p>
+              </div>
+
+              {/* MENU */}
+              <button
+                onClick={() => {
+                  setOpenProfileMenu(false);
+                  router.push("/profile");
+                }}
+                className="flex w-full items-center px-4 py-3 text-left text-sm hover:bg-grey-100"
+              >
+                👤 Profile Saya
+              </button>
+
+              <button
+                onClick={() => {
+                  setOpenProfileMenu(false);
+                  router.push("/profile/edit");
+                }}
+                className="flex w-full items-center px-4 py-3 text-left text-sm hover:bg-grey-100"
+              >
+                ✏️ Edit Profile
+              </button>
+
+              <div className="border-t border-grey-200" />
+
+              <button
+                onClick={handleLogout}
+                className="flex w-full items-center px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50"
+              >
+                🚪 Logout
+              </button>
+            </div>
+          )}
         </div>
+
+        {/* ============================================= */}
+        {/* NOTIFICATION */}
+        {/* ============================================= */}
+        <button
+          type="button"
+          className="rounded-lg p-2 transition hover:bg-grey-100"
+        >
+          <BellIcon size={26} />
+        </button>
       </div>
     </div>
   );

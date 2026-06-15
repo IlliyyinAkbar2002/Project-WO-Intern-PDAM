@@ -1,3 +1,5 @@
+import AdminDashboardClient from "@/components/admin/dashboard/AdminDashboardChart";
+import RealtimeClock from "@/components/admin/dashboard/RealTimeClock";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import React from "react";
@@ -7,17 +9,21 @@ export default async function AdminDashboardPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
   const role = cookieStore.get("role")?.value;
+  const userName = cookieStore.get("user_name")?.value ?? "";
+  const departmentName = cookieStore.get("departemen_nama")?.value ?? "";
 
-  // Kalau belum login → ke /login
   if (!token) {
     redirect("/login");
   }
-
-  // Kalau role bukan user (2 = Manager, 3 = Employee) → ke /login
   if (role !== "2") {
     redirect("/login");
   }
 
   // Kalau lolos → tampilkan dashboard user
-  return <div>Admin Dashboard Page 🔒</div>;
+  return (
+      <div className="space-y-6">
+        <RealtimeClock userName={userName} departmentName={departmentName} />
+        <AdminDashboardClient />
+      </div>
+    );
 }
