@@ -51,10 +51,10 @@ export interface PegawaiPayload {
   role_id: number;
   departemen_id: number;
   jabatan_id: number;
-  tanggal_lahir?: string;
-  jenis_kelamin?: string;
-  alamat?: string;
-  telepon?: string;
+  tanggal_lahir?: string | null;
+  jenis_kelamin?: string | null;
+  alamat?: string | null;
+  telepon?: string | null;
 }
 
 export interface PegawaiResponse {

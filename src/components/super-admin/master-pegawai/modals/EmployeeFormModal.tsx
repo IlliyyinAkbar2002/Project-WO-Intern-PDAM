@@ -20,6 +20,10 @@ type FormState = {
   email: string;
   password: string;
   nip: string;
+  tanggal_lahir: string;
+  jenis_kelamin: string;
+  alamat: string;
+  telepon: string;
   role_id?: number;
   departemen_id?: number;
   jabatan_id?: number;
@@ -43,6 +47,10 @@ export default function EmployeeFormModal({
     email: "",
     password: "",
     nip: "",
+    tanggal_lahir: "",
+    jenis_kelamin: "",
+    alamat: "",
+    telepon: "",
     role_id: undefined,
     departemen_id: undefined,
     jabatan_id: undefined,
@@ -78,6 +86,10 @@ export default function EmployeeFormModal({
           email: data.user?.email ?? "",
           password: "",
           nip: data.nip ?? "",
+          tanggal_lahir: data.tanggal_lahir ?? "",
+          jenis_kelamin: data.jenis_kelamin ?? "",
+          alamat: data.alamat ?? "",
+          telepon: data.telepon ?? "",
           role_id: data.user?.role_id,
           departemen_id: data.departemen_id,
           jabatan_id: data.jabatan_id,
@@ -132,6 +144,10 @@ export default function EmployeeFormModal({
           nama: form.nama,
           email: form.email,
           nip: form.nip.trim(),
+          tanggal_lahir: form.tanggal_lahir || null,
+          jenis_kelamin: form.jenis_kelamin || null,
+          alamat: form.alamat || null,
+          telepon: form.telepon || null,
           role_id: Number(form.role_id),
           departemen_id: Number(form.departemen_id),
           jabatan_id: Number(form.jabatan_id),
@@ -181,11 +197,11 @@ export default function EmployeeFormModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 px-4"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-3xl rounded-xl bg-white overflow-hidden max-h-[90vh] flex flex-col"
+        className="w-full max-w-3xl rounded-xl bg-white overflow-hidden max-h-[85vh] flex flex-col mt-16"
         onClick={(e) => e.stopPropagation()}
       >
         {/* HEADER */}
@@ -322,13 +338,74 @@ export default function EmployeeFormModal({
             </select>
           </div>
 
+          {isEdit && (
+            <>
+              {/* Tanggal Lahir */}
+              <div>
+                <label className="text-sm font-medium">Tanggal Lahir</label>
+                <input
+                  type="date"
+                  name="tanggal_lahir"
+                  value={form.tanggal_lahir}
+                  onChange={handleChange}
+                  className="w-full border rounded px-3 py-2 mt-1"
+                />
+              </div>
+
+              {/* Jenis Kelamin */}
+              <div>
+                <label className="text-sm font-medium">Jenis Kelamin</label>
+
+                <select
+                  name="jenis_kelamin"
+                  value={form.jenis_kelamin}
+                  onChange={handleChange}
+                  className="w-full border rounded px-3 py-2 mt-1"
+                >
+                  <option value="">Pilih Jenis Kelamin</option>
+                  <option value="Laki-laki">Laki-laki</option>
+                  <option value="Perempuan">Perempuan</option>
+                </select>
+              </div>
+
+              {/* Nomor Telepon */}
+              <div>
+                <label className="text-sm font-medium">Nomor Telepon</label>
+
+                <input
+                  name="telepon"
+                  value={form.telepon}
+                  onChange={handleChange}
+                  placeholder="08xxxxxxxxxx"
+                  className="w-full border rounded px-3 py-2 mt-1"
+                />
+              </div>
+
+              {/* Alamat */}
+              <div>
+                <label className="text-sm font-medium">Alamat</label>
+                <textarea
+                  name="alamat"
+                  value={form.alamat}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      alamat: e.target.value,
+                    }))
+                  }
+                  rows={3}
+                  className="w-full border rounded px-3 py-2 mt-1"
+                />
+              </div>
+            </>
+          )}
+
           {/* ACTION */}
           <div className="flex justify-end gap-3 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border rounded"
-            >
+              className="px-4 py-2 border rounded">
               Batal
             </button>
 

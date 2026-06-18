@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
+import Swal from "sweetalert2";
 
 interface NavbarProps {
   roleName: string;
@@ -28,28 +29,58 @@ export default function Navbar({ roleName }: NavbarProps) {
         setOpenProfileMenu(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
-
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
   // =====================================================
+  // GET ROLE PATH
+  // =====================================================
+  const getRolePath = () => {
+    const role = Cookies.get("role_name");
+    switch (role) {
+      case "superadmin":
+        return "super-admin";
+      case "admin":
+        return "admin";
+      case "manager":
+        return "manager";
+      default:
+        return "";
+    }
+  };
+
+  // =====================================================
   // LOGOUT
   // =====================================================
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    const result = await Swal.fire({
+      title: "Keluar dari aplikasi?",
+      text: "Anda harus login kembali untuk mengakses aplikasi.",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Ya, Keluar",
+      cancelButtonText: "Batal",
+      reverseButtons: true,
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#6b7280",
+    });
+
+    if (!result.isConfirmed) return;
+
     Cookies.remove("token");
     Cookies.remove("role_name");
     Cookies.remove("user_id");
     Cookies.remove("departemen_id");
-
-    router.push("/login");
+    Cookies.remove("user_name");
+    Cookies.remove("department_name");
+    router.replace("/login");
   };
 
   return (
-    <div className="flex h-full w-full items-center justify-between border-b-2 border-grey-300 bg-standardWhite px-12 py-4 text-primary-500">
+    <div className="relative z-[9999] flex h-full w-full items-center justify-between border-b-2 border-grey-300 bg-standardWhite px-12 py-4 text-primary-500">
       {/* ================================================= */}
       {/* LOGO */}
       {/* ================================================= */}
@@ -85,9 +116,7 @@ export default function Navbar({ roleName }: NavbarProps) {
             className="flex items-center gap-2 rounded-lg px-2 py-1 transition hover:bg-grey-100"
           >
             <UserIcon size={26} />
-
             <span>Profile</span>
-
             <CaretDownIcon
               size={16}
               className={`transition-transform ${
@@ -97,20 +126,18 @@ export default function Navbar({ roleName }: NavbarProps) {
           </button>
 
           {openProfileMenu && (
-            <div className="absolute right-0 top-12 z-50 w-56 overflow-hidden rounded-lg border border-grey-200 bg-white shadow-lg">
+            <div className="fixed right-8 top-14 z-[9999] w-56 overflow-hidden rounded-lg border border-grey-200 bg-white shadow-lg">
               {/* HEADER */}
               <div className="border-b border-grey-200 px-4 py-3">
                 <p className="font-semibold text-grey-900">Akun Saya</p>
-                <p className="text-xs capitalize text-grey-500">
-                  {roleName}
-                </p>
+                <p className="text-xs capitalize text-grey-500">{roleName}</p>
               </div>
 
               {/* MENU */}
               <button
                 onClick={() => {
                   setOpenProfileMenu(false);
-                  router.push("/profile");
+                  router.push(`/protected/${getRolePath()}/profile`);
                 }}
                 className="flex w-full items-center px-4 py-3 text-left text-sm hover:bg-grey-100"
               >
@@ -120,7 +147,7 @@ export default function Navbar({ roleName }: NavbarProps) {
               <button
                 onClick={() => {
                   setOpenProfileMenu(false);
-                  router.push("/profile/edit");
+                  router.push(`/protected/${getRolePath()}/profile/edit`);
                 }}
                 className="flex w-full items-center px-4 py-3 text-left text-sm hover:bg-grey-100"
               >

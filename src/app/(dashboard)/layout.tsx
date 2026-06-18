@@ -33,7 +33,7 @@ export default async function DashboardLayout({
   return (
     <div className="relative h-screen w-screen bg-grey-200">
       {/* Navbar */}
-      <div className="fixed top-0 h-16 w-full z-10">
+      <div className="fixed top-0 h-16 w-full z-[9999]">
         <Navbar roleName={roleName} />
       </div>
 

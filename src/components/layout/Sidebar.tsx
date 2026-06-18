@@ -257,7 +257,7 @@ export default function Sidebar({ role }: SidebarProps) {
 
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Logout?</AlertDialogTitle>
+            <AlertDialogTitle>Keluar?</AlertDialogTitle>
             <AlertDialogDescription>
               Apakah Anda yakin ingin keluar dari aplikasi?
             </AlertDialogDescription>

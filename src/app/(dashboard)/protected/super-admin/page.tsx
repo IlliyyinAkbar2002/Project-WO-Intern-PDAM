@@ -17,7 +17,7 @@ export default async function SuperAdminDashboardPage() {
   return (
     <div className="space-y-6">
       <RealtimeClock userName={userName} departmentName={departmentName} />
-      <AdminDashboardClient />
+      <AdminDashboardClient/>
     </div>
   );
 }

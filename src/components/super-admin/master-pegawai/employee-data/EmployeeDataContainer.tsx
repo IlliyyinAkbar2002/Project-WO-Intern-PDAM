@@ -283,11 +283,6 @@ export default function EmployeeDataContainer({
             Edit
           </button>
 
-          <button className="flex items-center gap-2 text-sm text-green-600 hover:underline">
-            <EnvelopeSimpleIcon size={16} />
-            Reset Password
-          </button>
-
           <button
             onClick={() =>
               handleToggleStatus(row.original.user_id, row.original.is_active)
@@ -297,7 +292,7 @@ export default function EmployeeDataContainer({
             }`}
           >
             <UserMinusIcon size={16} />
-            {row.original.is_active ? "Disable" : "Enable"}
+            {row.original.is_active ? "Disable Account" : "Enable Account"}
           </button>
         </div>
       ),

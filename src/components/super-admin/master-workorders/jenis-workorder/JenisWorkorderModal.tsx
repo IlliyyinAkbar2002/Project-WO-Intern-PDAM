@@ -80,7 +80,7 @@ export default function JenisWorkorderModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 px-4 pt-20"
       onClick={onClose}
     >
       <div
@@ -111,7 +111,7 @@ export default function JenisWorkorderModal({
           {/* ============================================= */}
           {/* INFORMASI */}
           {/* ============================================= */}
-          <div className="rounded-xl border bg-grey-100 px-6 py-4">
+          <div className="rounded-xl border bg-grey-100 px-4 py-2">
             <h3 className="mb-4 text-xl font-semibold">
               Informasi Jenis Workorder
             </h3>
@@ -149,7 +149,7 @@ export default function JenisWorkorderModal({
 
             <div className="flex-1 overflow-y-auto bg-grey-100 px-6 py-4 pb-10">
               {previewFields.length > 0 ? (
-                <div className="flex flex-col gap-2">
+                <div className="grid grid-cols-3 gap-4">
                   {previewFields.map((field, index) => (
                     <PreviewField
                       key={field}
@@ -206,7 +206,7 @@ function PreviewField({ number, label }: PreviewFieldProps) {
         {number}. {label}
       </label>
       <div className="rounded-md border bg-grey-50 px-3 py-2 text-sm text-muted-foreground">
-        Akan diisi oleh SPV di mobile
+        Akan diisi oleh Staff dibagian mobile
       </div>
     </div>
   );

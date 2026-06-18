@@ -311,11 +311,11 @@ export default function WorkorderModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 px-4 py-24"
       onClick={onClose}
     >
       <div
-        className="flex h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white"
+        className="flex max-h-[85vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white mt-16"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between bg-primary-500 px-6 py-4">
@@ -422,7 +422,7 @@ export default function WorkorderModal({
 
             <div className="flex-1 overflow-y-auto bg-grey-100 px-6 py-4 pb-10">
               {previewFields.length > 0 ? (
-                <div className="flex flex-col gap-2">
+                <div className="grid grid-cols-3 gap-4">
                   {previewFields.map((field, index) => (
                     <PreviewField
                       key={field}
@@ -460,7 +460,7 @@ function PreviewField({ number, label }: { number: number; label: string }) {
       </label>
 
       <div className="rounded-md border bg-grey-50 px-3 py-2 text-sm text-muted-foreground">
-        Akan diisi oleh SPV di mobile
+        Akan diisi oleh Staff dibagian mobile
       </div>
     </div>
   );
