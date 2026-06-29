@@ -62,10 +62,6 @@ const menuItems: Record<string, MenuItem[]> = {
           label: "Data Pegawai",
           href: `${baseSuperAdminPath}/master-pegawai/employee-data`,
         },
-        {
-          label: "Monitoring",
-          href: `${baseSuperAdminPath}/master-formulir/monitoring`,
-        },
       ],
     },
     {
@@ -81,12 +77,16 @@ const menuItems: Record<string, MenuItem[]> = {
           href: `${baseSuperAdminPath}/master-workorders/workorder`,
         },
         {
-          label: "History Workorder",
-          href: `${baseSuperAdminPath}/master-workorders/workorder-categories`,
+          label: "Approve Workorder Lembur",
+          href: `${baseSuperAdminPath}/master-workorders/approval-lembur`,
         },
         {
-          label: "Approve Workorder Lembur",
-          href: `${baseSuperAdminPath}/master-workorders/workorder-categories`,
+          label: "Monitoring Workorder",
+          href: `${baseSuperAdminPath}/master-workorders/workorder/progress-monitoring`,
+        },
+        {
+          label: "History Workorder",
+          href: `${baseSuperAdminPath}/master-workorders/workorder/history-workorder`,
         },
       ],
     },
@@ -110,7 +110,7 @@ const menuItems: Record<string, MenuItem[]> = {
         },
         {
           label: "Log Penggunaan Material",
-          href: `${baseSuperAdminPath}/master-materials/material-`,
+          href: `${baseSuperAdminPath}/master-materials/material-data/material-log`,
         },
       ],
     },
@@ -128,27 +128,53 @@ const menuItems: Record<string, MenuItem[]> = {
       href: `${baseAdminPath}/pengaduan`,
     },
     {
-      title: "Buat Workorder",
+      title: "Master Workorder",
       icon: <ToolboxIcon size={24} className="text-primary-500" />,
       subMenu: [
         {
-          label: "Normal",
-          href: `${baseAdminPath}/workorders/normal/create`,
+          label: "Jenis Workorder",
+          href: `${baseAdminPath}/master-workorders/workorder-categories`,
         },
         {
-          label: "Lembur",
-          href: `${baseAdminPath}/workorders/lembur/create`,
+          label: "Workorder",
+          href: `${baseAdminPath}/master-workorders/workorder`,
+        },
+        {
+          label: "Approve Workorder Lembur",
+          href: `${baseAdminPath}/master-workorders/approval-lembur`,
+        },
+        {
+          label: "Monitoring Workorder",
+          href: `${baseAdminPath}/master-workorders/workorder/progress-monitoring`,
+        },
+        {
+          label: "History Workorder",
+          href: `${baseAdminPath}/master-workorders/`,
         },
       ],
     },
     {
-      title: "Riwayat",
-      icon: (
-        <ClockCounterClockwiseIcon size={24} className="text-primary-500" />
-      ),
+      title: "View Location",
+      icon: <MapPinAreaIcon size={24} className="text-primary-500" />,
       subMenu: [
-        { label: "Normal", href: `${baseAdminPath}/history/normal` },
-        { label: "Lembur", href: `${baseAdminPath}/history/lembur` },
+        {
+          label: "Radius Lokasi",
+          href: `${baseAdminPath}/master-locations/location-radius`,
+        },
+      ],
+    },
+    {
+      title: "Master Material",
+      icon: <HammerIcon size={24} className="text-primary-500" />,
+      subMenu: [
+        {
+          label: "Data Material",
+          href: `${baseAdminPath}/master-materials/material-data`,
+        },
+        {
+          label: "Log Penggunaan Material",
+          href: `${baseAdminPath}/master-materials/material-`,
+        },
       ],
     },
   ],
@@ -173,16 +199,30 @@ const menuItems: Record<string, MenuItem[]> = {
           href: `${baseManagerPath}/master-workorders/workorder-categories`,
         },
         {
-          label: "List Workorder",
-          href: `${baseManagerPath}/master-workorders/workorder-categories`,
+          label: "Workorder",
+          href: `${baseManagerPath}/master-workorders/workorder`,
+        },
+        {
+          label: "Approve Workorder Lembur",
+          href: `${baseManagerPath}/master-workorders/approval-lembur`,
+        },
+        {
+          label: "Monitoring Workorder",
+          href: `${baseManagerPath}/master-workorders/workorder/progress-monitoring`,
         },
         {
           label: "History Workorder",
-          href: `${baseManagerPath}/master-workorders/workorder-categories`,
+          href: `${baseManagerPath}/master-workorders/`,
         },
+      ],
+    },
+    {
+      title: "View Location",
+      icon: <MapPinAreaIcon size={24} className="text-primary-500" />,
+      subMenu: [
         {
-          label: "Approve Workorder",
-          href: `${baseManagerPath}/master-workorders/workorder-categories`,
+          label: "Radius Lokasi",
+          href: `${baseManagerPath}/master-locations/location-radius`,
         },
       ],
     },

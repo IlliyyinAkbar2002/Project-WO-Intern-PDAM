@@ -1,25 +1,50 @@
 import { api } from "@/lib/api";
-import { ProgressWorkorder } from "@/types/progressWorkorderTypes";
-import { toCamelCase } from "@/utils/caseFormatter";
+import {
+  MonitoringWorkorder,
+  WorkorderMemberSummaryResponse,
+  ProgressByMemberResponse,
+  ProgressDetail,
+} from "@/types/progressWorkorderTypes";
 
-export const getProgressWorkorders = async (workorderId: string): Promise<ProgressWorkorder[]> => {
-  try {
-    const response = await api.get("/progress-workorder", {
-      params: {
-        workorder_id: workorderId,
-      },
-    });
-    return toCamelCase(response.data);
-  } catch (error) {
-    throw new Error("Gagal mengambil progress workorder.");
-  }
+export const ProgressWorkorderService = {
+  /**
+   * MONITORING LIST (ADMIN / MANAGER)
+   * menampilkan semua workorder + progress percentage
+   */
+  getMonitoring: async () => {
+    const { data } = await api.get<MonitoringWorkorder[]>(
+      `/v1/progress-workorder/monitoring`,
+    );
+    return data;
+  },
+
+  /**
+   * DETAIL MEMBER SUMMARY (1 workorder)
+   */
+  getMemberSummary: async (workorderId: number) => {
+    const { data } = await api.get<WorkorderMemberSummaryResponse>(
+      `/v1/progress-workorder/member-summary/${workorderId}`,
+    );
+    return data;
+  },
+
+  /**
+   * PROGRESS BY MEMBER (timeline detail per pegawai)
+   */
+  getProgressByMember: async (workorderId: number) => {
+    const { data } = await api.get<ProgressByMemberResponse>(
+      `/v1/progress-workorder/by-member/${workorderId}`,
+    );
+    return data;
+  },
+
+  /**
+   * REVIEW HISTORY (progress detail log)
+   */
+  getProgressDetail: async (progressWorkorderId: number) => {
+    const { data } = await api.get<ProgressDetail[]>(
+      `/v1/progress-detail?progress_workorder_id=${progressWorkorderId}`,
+    );
+    return data;
+  },
 };
-
-export const getProgressWorkorderById = async (id: string): Promise<ProgressWorkorder> => {
-  try {
-    const response = await api.get(`/progress-workorder/${id}`);
-    return toCamelCase(response.data);
-  } catch (error) {
-    throw new Error("Gagal mengambil detail progress workorder.");
-  }
-}

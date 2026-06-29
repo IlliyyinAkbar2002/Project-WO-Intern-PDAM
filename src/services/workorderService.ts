@@ -5,6 +5,7 @@ import {
   WorkorderInput,
   WorkorderResponse,
 } from "@/types/workorderTypes";
+import { HistoryWorkorderDetailResponse } from "@/types/workorderTypes";
 import { toCamelCase, toSnakeCase } from "@/utils/caseFormatter";
 
 interface GetWorkorderParams {
@@ -13,6 +14,7 @@ interface GetWorkorderParams {
   search?: string;
   status?: string;
   prioritas?: string;
+  jenis?: string;
   departemenId?: number;
 }
 
@@ -79,7 +81,6 @@ export const createWorkorder = async (
 ): Promise<Workorder> => {
   try {
     const response = await api.post("/v1/workorder", toSnakeCase(data));
-
     return mapWorkorder(toCamelCase(response.data.data));
   } catch (error) {
     throw handleApiError(error, "Gagal menambah workorder.");
@@ -95,7 +96,6 @@ export const updateWorkorder = async (
 ): Promise<Workorder> => {
   try {
     const response = await api.put(`/v1/workorder/${id}`, toSnakeCase(data));
-
     return mapWorkorder(toCamelCase(response.data.data));
   } catch (error) {
     throw handleApiError(error, "Gagal memperbarui workorder.");
@@ -139,6 +139,37 @@ export const getWorkorderKPI = async () => {
     return toCamelCase(response.data);
   } catch (error) {
     throw handleApiError(error, "Gagal mengambil KPI workorder.");
+  }
+};
+
+// =========================================================
+// GET History WO
+// =========================================================
+export const getWorkorderHistory = async (page = 1, search = "") => {
+  try {
+    const response = await api.get("/v1/workorder/history", {
+      params: {
+        page,
+        search,
+      },
+    });
+    return toCamelCase(response.data);
+  } catch (error) {
+    throw handleApiError(error, "Gagal mengambil history workorder.");
+  }
+};
+
+// =========================================================
+// GET Detail History WO
+// =========================================================
+export const getWorkorderHistoryDetail = async (
+  id: string | number,
+): Promise<HistoryWorkorderDetailResponse> => {
+  try {
+    const response = await api.get(`/v1/workorder/history/${id}`);
+    return toCamelCase(response.data);
+  } catch (error) {
+    throw handleApiError(error, "Gagal mengambil detail history workorder.");
   }
 };
 
@@ -205,14 +236,15 @@ const mapWorkorder = (data: any): Workorder => {
   return {
     ...data,
 
+    lemburSplId: data.lemburSplId,
+    jenisWorkorderLabel: data.jenisWorkorder,
+
     assignedTo:
       typeof data.assignedTo === "object"
         ? data.assignedTo?.id
         : (data.assignedTo ?? 0),
 
     assignedToName:
-      typeof data.assignedTo === "object"
-        ? data.assignedTo?.nama
-        : (data.assignedToUser?.pegawai?.nama ?? "-"),
+      data.workorderAssignment?.spv?.nama ?? data.assignedTo?.nama ?? "-",
   };
 };

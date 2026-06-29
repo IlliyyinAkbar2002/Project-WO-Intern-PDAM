@@ -32,17 +32,27 @@ const statusLabelById: Record<number, string> = {
  * NEW SYSTEM (Pengaduan & Workorder)
  */
 const statusVariantByString: Record<string, BadgeProps["variant"]> = {
+  // Pengaduan & Workorder
   Pending: "warning",
   Proses: "info",
   Selesai: "success",
   Ditolak: "danger",
+  // Lembur SPL
+  pending: "warning",
+  approved: "success",
+  rejected: "danger",
 };
 
 const statusLabelByString: Record<string, string> = {
+  // Pengaduan & Workorder
   Pending: "Pending",
   Proses: "Proses",
   Selesai: "Selesai",
   Ditolak: "Ditolak",
+  // Lembur SPL
+  pending: "Pending",
+  approved: "Approved",
+  rejected: "Rejected",
 };
 
 interface StatusBadgeProps {

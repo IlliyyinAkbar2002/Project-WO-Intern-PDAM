@@ -18,10 +18,8 @@ export default function PengaduanDataPage() {
   // 🔢 Ambil query param
   const rawPage = parseInt(searchParams.get("page") || "1", 10);
   const page = isNaN(rawPage) || rawPage < 1 ? 1 : rawPage;
-
   const search = searchParams.get("search") || "";
   const sort = searchParams.get("sort") || "desc";
-
   const itemsPerPage = 10;
 
   // 📦 State

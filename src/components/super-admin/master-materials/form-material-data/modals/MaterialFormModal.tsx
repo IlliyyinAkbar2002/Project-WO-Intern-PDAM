@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button, Input } from "@/components/ui";
 import SingleSelect from "@/components/shared/fields/SingleSelect";
 import { getUsers } from "@/services/userService";
-import { createMaterial, getMaterials } from "@/services/materialService";
+import { createMaterial, getMaterials, generateMaterialCode } from "@/services/materialService";
 import { toast } from "sonner";
 import Swal from "sweetalert2";
 
@@ -15,7 +15,7 @@ interface MaterialFormModalProps {
 
 export default function MaterialFormModal({ onClose }: MaterialFormModalProps) {
   const router = useRouter();
-  const [kodeMaterial, setKodeMaterial] = useState(0);
+  const [kodeMaterial, setKodeMaterial] = useState("");
   const [nama, setNama] = useState("");
   const [jumlahStok, setJumlahStok] = useState("");
   const [pegawaiId, setPegawaiId] = useState<number | null>(null);
@@ -36,15 +36,11 @@ export default function MaterialFormModal({ onClose }: MaterialFormModalProps) {
 
   const handleGenerateCode = async () => {
     try {
-      const materials = await getMaterials();
-      const lastCode =
-        materials.length > 0
-          ? Math.max(...materials.map((m) => Number(m.kode_material || 0)))
-          : 0;
-      setKodeMaterial(lastCode + 1);
+      const code = await generateMaterialCode();
+      setKodeMaterial(code);
     } catch (error) {
       console.error(error);
-      toast.error("Gagal membuat kode material");
+      toast.error("Gagal generate kode material");
     }
   };
 
@@ -55,7 +51,7 @@ export default function MaterialFormModal({ onClose }: MaterialFormModalProps) {
     }
 
     const payload: any = {
-      kode_material: Number(kodeMaterial),
+      kode_material: kodeMaterial,
       nama: nama.trim(),
       jumlah_stok: Number(jumlahStok),
     };

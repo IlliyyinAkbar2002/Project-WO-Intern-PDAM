@@ -20,6 +20,7 @@ export default function WorkorderPage() {
   const rawPage = parseInt(searchParams.get("page") || "1", 10);
   const page = isNaN(rawPage) || rawPage < 1 ? 1 : rawPage;
   const search = searchParams.get("search") || "";
+  const jenis = searchParams.get("jenis") || "";
   const itemsPerPage = 10;
 
   // =========================================================
@@ -32,6 +33,7 @@ export default function WorkorderPage() {
           page,
           limit: itemsPerPage,
           search,
+          jenis,
         });
         setWorkorderData(response);
       } catch (error) {
@@ -44,7 +46,7 @@ export default function WorkorderPage() {
       }
     };
     fetchData();
-  }, [page, search]);
+  }, [page, search, jenis]);
 
   return (
     <WorkorderContainer

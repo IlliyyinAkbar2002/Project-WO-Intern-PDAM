@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { getMaterials } from "@/services/materialService";
-import MaterialDataContainer from "@/components/super-admin/master-materials/form-material-data/MaterialDataContainer";
+import MaterialDataContainer from "@/components/manager/master-materials/form-material-data/MaterialDataContainer";
 import { MaterialResponse } from "@/types/materialTypes";
 
 export default function MaterialDataPage() {

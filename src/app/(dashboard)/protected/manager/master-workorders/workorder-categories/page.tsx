@@ -3,47 +3,68 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { getJenisWorkorders } from "@/services/jenisWorkorderService";
-import WorkorderCategoriesContainer from "@/components/super-admin/master-workorders/jenis-workorder/JenisWorkorderContainer";
+import JenisWorkorderContainer from "@/components/manager/master-workorders/jenis-workorder/JenisWorkorderContainer";
 import { JenisWorkorderResponse } from "@/types/jenisWorkorderTypes";
 
 export default function WorkorderCategoriesPage() {
   const searchParams = useSearchParams();
-
   const [jenisWorkorderData, setJenisWorkorderData] =
     useState<JenisWorkorderResponse>({
       data: [],
       totalPages: 0,
-      currentPage: 0,
+      currentPage: 1,
     });
 
-  // ✅ Ambil nilai dari query string dengan .get()
+  // =========================================================
+  // QUERY PARAMS
+  // =========================================================
   const rawPage = parseInt(searchParams.get("page") || "1", 10);
   const page = isNaN(rawPage) || rawPage < 1 ? 1 : rawPage;
   const search = searchParams.get("search") || "";
   const sort = searchParams.get("sort") || "desc";
   const itemsPerPage = 10;
 
-  // ✅ Fetch data di sisi client (browser)
+  // =========================================================
+  // FETCH DATA
+  // =========================================================
   useEffect(() => {
-    getJenisWorkorders(page, itemsPerPage, search, sort)
-      .then((res) => {
-        // Filter hanya jenis workorder yang sudah memiliki form workorder
-        const filteredData = res.data.filter(
-          (item) => item.formWorkorder && item.formWorkorder.length > 0,
+    const fetchData = async () => {
+      try {
+        const response = await getJenisWorkorders(
+          page,
+          itemsPerPage,
+          search,
+          sort,
         );
+
+        // ===================================================
+        // FILTER DATA
+        // ===================================================
+        // const filteredData = response.data.filter(
+        //   (item) => item.formWorkorder && item.formWorkorder.length > 0,
+        // );
+
+        // setJenisWorkorderData({
+        //   ...response,
+        //   data: filteredData,
+        // });
+        console.log(response.data);
+        setJenisWorkorderData(response);
+      } catch (error) {
+        console.error("Failed to fetch jenis workorder data:", error);
+
         setJenisWorkorderData({
-          ...res,
-          data: filteredData,
+          data: [],
+          totalPages: 0,
+          currentPage: 1,
         });
-      })
-      .catch((err) => {
-        console.error("Failed to fetch jenis workorder data:", err);
-        setJenisWorkorderData({ data: [], totalPages: 0, currentPage: 0 });
-      });
-  }, [page, search, sort]);
+      }
+    };
+    fetchData();
+  }, [page, search, sort, itemsPerPage]);
 
   return (
-    <WorkorderCategoriesContainer
+    <JenisWorkorderContainer
       data={jenisWorkorderData.data}
       totalPages={jenisWorkorderData.totalPages}
       currentPage={page}

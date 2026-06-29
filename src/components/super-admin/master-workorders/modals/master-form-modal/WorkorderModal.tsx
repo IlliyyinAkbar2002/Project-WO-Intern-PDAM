@@ -14,7 +14,7 @@ import {
   updateWorkorder,
 } from "@/services/workorderService";
 import { getPegawai } from "@/services/pegawaiService";
-import { getPengaduan } from "@/services/pengaduanService";
+import { getPengaduanOptions } from "@/services/pengaduanService";
 import { getJenisWorkorders } from "@/services/jenisWorkorderService";
 import { JenisWorkorder, KategoriWorkorder } from "@/types/jenisWorkorderTypes";
 import { WorkorderInput, PrioritasWorkorder, Workorder } from "@/types/workorderTypes";
@@ -130,11 +130,7 @@ export default function WorkorderModal({
 
         const [pegawaiResp, pengaduanResp, jenisResp] = await Promise.all([
           pegawaiPromise,
-          getPengaduan({
-            page: 1,
-            search: "",
-            sort: "desc",
-          }),
+          getPengaduanOptions(),
           getJenisWorkorders(1, 1000, "", "desc", true),
         ]);
 
@@ -146,7 +142,7 @@ export default function WorkorderModal({
         );
 
         setPengaduanOptions(
-          (pengaduanResp.data || []).map((item: PengaduanResponse) => ({
+          (pengaduanResp.data ?? []).map((item: any) => ({
             value: item.kode_pengaduan,
             label: `${item.kode_pengaduan} - ${item.judul}`,
             lokasi: item.lokasi ?? "",

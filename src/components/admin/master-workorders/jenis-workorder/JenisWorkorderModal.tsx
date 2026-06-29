@@ -1,0 +1,213 @@
+"use client";
+
+import { useEffect, useMemo } from "react";
+import { XIcon } from "@phosphor-icons/react";
+import { useJenisWorkorderStore } from "./useJenisWorkorderStore";
+
+interface JenisWorkorderModalProps {
+  id: number;
+  onClose: () => void;
+}
+
+// =========================================================
+// PREVIEW FIELD MAP
+// =========================================================
+const PREVIEW_FIELDS_MAP = {
+  meter: [
+    "Nomor Meter",
+    "Kondisi Meter Awal",
+    "Kondisi Meter Akhir",
+    "Hasil Kalibrasi",
+  ],
+  jaringan: [
+    "Jenis Pipa",
+    "Diameter Pipa",
+    "Panjang Pipa",
+    "Tingkat Kerusakan",
+    "Tindakan Perbaikan",
+    "Hasil Inspeksi",
+  ],
+  infrastruktur: [
+    "Nama Aset",
+    "Jenis Aset",
+    "Kapasitas",
+    "Kondisi Awal",
+    "Kondisi Akhir",
+    "Jadwal Pemeliharaan",
+    "Tindakan",
+  ],
+} as const;
+
+// =========================================================
+// COMPONENT
+// =========================================================
+export default function JenisWorkorderModal({
+  id,
+  onClose,
+}: JenisWorkorderModalProps) {
+  const { formData, fetchJenisWorkorderById, resetForm, loading } =
+    useJenisWorkorderStore();
+
+  // =========================================================
+  // FETCH DETAIL
+  // =========================================================
+  useEffect(() => {
+    const fetchDetail = async () => {
+      try {
+        await fetchJenisWorkorderById(id);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchDetail();
+
+    return () => {
+      resetForm();
+    };
+  }, [id, fetchJenisWorkorderById, resetForm]);
+
+  // =========================================================
+  // PREVIEW FIELDS
+  // =========================================================
+  const previewFields = useMemo(() => {
+    if (!formData.kategori) {
+      return [];
+    }
+
+    return PREVIEW_FIELDS_MAP[formData.kategori] || [];
+  }, [formData.kategori]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 px-4 pt-20"
+      onClick={onClose}
+    >
+      <div
+        className="flex h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* ================================================= */}
+        {/* HEADER */}
+        {/* ================================================= */}
+        <div className="flex items-center justify-between bg-primary-500 px-6 py-4">
+          <h2 className="text-2xl font-semibold text-white">
+            Detail Jenis Workorder
+          </h2>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full p-1 transition hover:bg-primary-400"
+          >
+            <XIcon size={20} className="text-white" />
+          </button>
+        </div>
+
+        {/* ================================================= */}
+        {/* CONTENT */}
+        {/* ================================================= */}
+        <div className="flex flex-1 flex-col gap-6 overflow-hidden p-4">
+          {/* ============================================= */}
+          {/* INFORMASI */}
+          {/* ============================================= */}
+          <div className="rounded-xl border bg-grey-100 px-4 py-2">
+            <h3 className="mb-4 text-xl font-semibold">
+              Informasi Jenis Workorder
+            </h3>
+
+            {loading ? (
+              <div className="text-sm text-muted-foreground">
+                Memuat data...
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-6">
+                <DetailItem
+                  label="Nama Workorder"
+                  value={formData.nama || "-"}
+                />
+
+                <DetailItem label="Kategori" value={formData.kategori || "-"} />
+
+                <DetailItem
+                  label="Status"
+                  value={formData.is_active ? "Aktif" : "Nonaktif"}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* ============================================= */}
+          {/* PREVIEW FIELD */}
+          {/* ============================================= */}
+          <div className="flex h-[420px] flex-col overflow-hidden rounded-xl border">
+            <div className="bg-primary-500 px-6 py-4">
+              <h3 className="text-lg font-semibold text-white">
+                Preview Field Spesifikasi
+              </h3>
+            </div>
+
+            <div className="flex-1 overflow-y-auto bg-grey-100 px-6 py-4 pb-10">
+              {previewFields.length > 0 ? (
+                <div className="grid grid-cols-3 gap-4">
+                  {previewFields.map((field, index) => (
+                    <PreviewField
+                      key={field}
+                      number={index + 1}
+                      label={field}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground">
+                  Tidak ada field spesifikasi
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =========================================================
+// DETAIL ITEM
+// =========================================================
+interface DetailItemProps {
+  label: string;
+  value: string;
+}
+
+function DetailItem({ label, value }: DetailItemProps) {
+  return (
+    <div className="space-y-2">
+      <label className="text-sm font-medium">{label}</label>
+
+      <div className="rounded-md border bg-white px-4 py-3 text-sm">
+        {value}
+      </div>
+    </div>
+  );
+}
+
+// =========================================================
+// PREVIEW FIELD
+// =========================================================
+interface PreviewFieldProps {
+  number: number;
+  label: string;
+}
+
+function PreviewField({ number, label }: PreviewFieldProps) {
+  return (
+    <div className="space-y-2">
+      <label className="text-sm font-medium leading-none">
+        {number}. {label}
+      </label>
+      <div className="rounded-md border bg-grey-50 px-3 py-2 text-sm text-muted-foreground">
+        Akan diisi oleh Staff dibagian mobile
+      </div>
+    </div>
+  );
+}

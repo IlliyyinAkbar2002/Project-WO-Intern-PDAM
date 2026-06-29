@@ -69,12 +69,11 @@ export default function PengaduanDataContainer({
   const columns: ColumnDef<Pengaduan>[] = [
     {
       header: "No",
-      cell: ({ row }) => row.index + 1,
+      cell: ({ row }) => (currentPage - 1) * itemsPerPage + row.index + 1,
     },
     {
       header: "Kode",
       accessorFn: (row) => {
-        // console.log("ROW:", row);
         return row.kode_pengaduan;
       },
     },

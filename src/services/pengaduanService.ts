@@ -64,3 +64,8 @@ export const getPengaduan = async (
     throw new Error(respData?.message || "Gagal mengambil data pengaduan.");
   }
 };
+
+export const getPengaduanOptions = async () => {
+  const response = await api.get("/v1/pengaduan/options");
+  return response.data;
+};
