@@ -163,7 +163,6 @@ export default function WorkorderModal({
         toast.error("Gagal mengambil data awal");
       }
     };
-
     fetchInitialData();
   }, [roleName, departemenId]);
 
@@ -213,6 +212,18 @@ export default function WorkorderModal({
   /* ========================================================= */
   const handleSubmit = async () => {
     try {
+      if (
+        !formData.kodePengaduan &&
+        !formData.jenisWorkorderId &&
+        !formData.assignedTo &&
+        !formData.prioritas
+      ) {
+        return Swal.fire({
+          icon: "warning",
+          title: "Validasi",
+          text: "Semua inputan wajib dipilih",
+        });
+      }
       if (!formData.kodePengaduan) {
         return Swal.fire({
           icon: "warning",
@@ -232,6 +243,13 @@ export default function WorkorderModal({
           icon: "warning",
           title: "Validasi",
           text: "SPV wajib dipilih",
+        });
+      }
+      if (!formData.prioritas) {
+        return Swal.fire({
+          icon: "warning",
+          title: "Validasi",
+          text: "Prioritas wajib dipilih",
         });
       }
       setIsSubmitting(true);
@@ -262,6 +280,7 @@ export default function WorkorderModal({
       if (id && isEdit) {
         await updateWorkorder(id, payload);
         savedWorkorder = await getWorkorderById(id);
+        savedWorkorder = await getWorkorderById(String(savedWorkorder.id));
         Swal.fire({
           icon: "success",
           title: "Berhasil",
@@ -271,6 +290,7 @@ export default function WorkorderModal({
         });
       } else {
         savedWorkorder = await createWorkorder(payload);
+        savedWorkorder = await getWorkorderById(String(savedWorkorder.id));
         Swal.fire({
           icon: "success",
           title: "Berhasil",
@@ -308,12 +328,10 @@ export default function WorkorderModal({
   return (
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 px-4 py-24"
-      onClick={onClose}
-    >
+      onClick={onClose}>
       <div
         className="flex max-h-[85vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white mt-16"
-        onClick={(e) => e.stopPropagation()}
-      >
+        onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between bg-primary-500 px-6 py-4">
           <h2 className="text-2xl font-semibold text-white">
             {isCreate
@@ -325,8 +343,7 @@ export default function WorkorderModal({
 
           <button
             onClick={onClose}
-            className="rounded-full p-1 hover:bg-primary-400"
-          >
+            className="rounded-full p-1 hover:bg-primary-400">
             <XIcon size={20} className="text-white" />
           </button>
         </div>
@@ -343,12 +360,17 @@ export default function WorkorderModal({
                 value={
                   pengaduanOptions.find(
                     (item) => item.value === formData.kodePengaduan,
-                  ) ?? null
+                  ) ??
+                  (formData.kodePengaduan
+                    ? {
+                        value: formData.kodePengaduan,
+                        label: formData.kodePengaduan,
+                        lokasi: formData.lokasi,
+                      }
+                    : null)
                 }
                 onChange={handlePengaduanChange}
-                isDisabled={isDetail || isEdit}
-              />
-
+                isDisabled={isDetail || isEdit}/>
               <SingleSelect
                 label="Jenis Workorder"
                 placeholder="Pilih jenis workorder"
@@ -359,8 +381,7 @@ export default function WorkorderModal({
                     jenisWorkorderId: Number(selected.value),
                   })
                 }
-                isDisabled={isDetail}
-              />
+                isDisabled={isDetail}/>
 
               <SingleSelect
                 label="Ditujukan Kepada"
@@ -376,8 +397,7 @@ export default function WorkorderModal({
                     assignedTo: Number(selected.value),
                   })
                 }
-                isDisabled={isDetail}
-              />
+                isDisabled={isDetail}/>
 
               <SingleSelect
                 label="Prioritas"
@@ -393,8 +413,7 @@ export default function WorkorderModal({
                     prioritas: selected.value as PrioritasWorkorder,
                   })
                 }
-                isDisabled={isDetail}
-              />
+                isDisabled={isDetail}/>
 
               <div>
                 <label className="mb-2 block text-sm font-medium">
@@ -423,8 +442,7 @@ export default function WorkorderModal({
                     <PreviewField
                       key={field}
                       number={index + 1}
-                      label={field}
-                    />
+                      label={field}/>
                   ))}
                 </div>
               ) : (

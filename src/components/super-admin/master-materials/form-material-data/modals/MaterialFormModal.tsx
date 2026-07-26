@@ -45,8 +45,8 @@ export default function MaterialFormModal({ onClose }: MaterialFormModalProps) {
   };
 
   const handleSubmit = async () => {
-    if (!nama.trim()) {
-      toast.error("Isi nama material terlebih dahulu");
+    if (!kodeMaterial && !nama.trim() && !jumlahStok) {
+      toast.error("Wajib mengisi semua inputan");
       return;
     }
 
@@ -66,6 +66,10 @@ export default function MaterialFormModal({ onClose }: MaterialFormModalProps) {
     }
     if (!jumlahStok) {
       toast.error("Jumlah stok wajib diisi");
+      return;
+    }
+    if (Number(jumlahStok) < 1) {
+      toast.error("Jumlah stok minimal 1");
       return;
     }
 
@@ -149,8 +153,20 @@ export default function MaterialFormModal({ onClose }: MaterialFormModalProps) {
             <Input
               label="Jumlah Stok"
               placeholder="Stok material"
+              type="text"
+              inputMode="numeric"
               value={jumlahStok}
-              onChange={(e) => setJumlahStok(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, "");
+                setJumlahStok(value);
+              }}
+              onPaste={(e) => {
+                const pasted = e.clipboardData.getData("text");
+
+                if (!/^\d+$/.test(pasted)) {
+                  e.preventDefault();
+                }
+              }}
             />
           </div>
 

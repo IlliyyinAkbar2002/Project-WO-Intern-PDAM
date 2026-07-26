@@ -61,6 +61,18 @@ export default function LoginForm() {
       // ===============================================
       // VALIDATION
       // ===============================================
+      if (!email.trim() && !password.trim()) {
+        setError("Email dan password tidak boleh kosong.");
+        return;
+      }
+      if (!email.trim()) {
+        setEmailError("Email tidak boleh kosong.");
+        return;
+      }
+      if (!password.trim()) {
+        setPasswordError("Kata sandi tidak boleh kosong.");
+        return;
+      }
       if (!validateEmail(email)) {
         setEmailError("Format email tidak valid.");
         return;
@@ -246,7 +258,7 @@ export default function LoginForm() {
         {/* FORGOT PASSWORD */}
         <div>
           <Link
-            href="/"
+            href="/forgot-password"
             className="font-medium text-primary-500 hover:underline"
           >
             Lupa kata sandi?
@@ -270,213 +282,3 @@ export default function LoginForm() {
     </div>
   );
 }
-
-// "use client";
-
-// import {
-//   EyeIcon,
-//   EyeSlashIcon,
-//   LockKeyIcon,
-//   UserCircleIcon,
-// } from "@phosphor-icons/react";
-// import Link from "next/link";
-// import { useState } from "react";
-// import { useRouter } from "next/navigation";
-// import { Input } from "@/components/ui/input";
-// import { api, ensureCsrfToken } from "@/lib/api";
-// import Cookies from "js-cookie";
-
-// export default function LoginForm() {
-//   const [email, setEmail] = useState("");
-//   const [password, setPassword] = useState("");
-//   const [isVisible, setIsVisible] = useState(false);
-//   const [isLoading, setIsLoading] = useState(false);
-//   const [error, setError] = useState("");
-//   const [emailError, setEmailError] = useState("");
-//   const [passwordError, setPasswordError] = useState("");
-
-//   const router = useRouter();
-
-//   const validateEmail = (email: string) => {
-//     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-//     return emailRegex.test(email);
-//   };
-
-//   const handleSubmit = async (e: React.FormEvent) => {
-//     e.preventDefault();
-//     setIsLoading(true);
-//     setError("");
-//     setEmailError("");
-//     setPasswordError("");
-
-//     // validasi email
-//     if (!validateEmail(email)) {
-//       setEmailError("Format email tidak valid.");
-//       setIsLoading(false);
-//       return;
-//     }
-
-//     // validasi password
-//     if (password.length < 8) {
-//       setPasswordError("Kata sandi harus minimal 8 karakter.");
-//       setIsLoading(false);
-//       return;
-//     }
-
-//     try {
-//       // memanggil csrf
-//       await ensureCsrfToken();
-//       //login request
-//       const res = await api.post("/v1/auth/login", { email, password });
-
-//       // Debug: Log the actual response structure
-//       console.log("Login response data:", res.data);
-//       console.log("Response structure:", {
-//         hasAccessToken: !!res.data.access_token,
-//         hasToken: !!res.data.token,
-//         hasUser: !!res.data.user,
-//         userData: res.data.user,
-//         userRoleId: res.data.user?.role_id,
-//         userRole: res.data.user?.role,
-//         fullResponse: res.data,
-//       });
-
-//       // Ambil token
-//       const token = res.data.access_token;
-//       // Ambil data user
-//       const userData = res.data.user;
-
-//       if (!token) {
-//         throw new Error("Token tidak ditemukan");
-//       }
-//       if (!userData) {
-//         throw new Error("User data tidak ditemukan");
-//       }
-
-//       // Ambil role
-//       const roleName = userData.role_name?.toLowerCase() ?? "";
-//       const roleId = userData.role_id;
-//       const userName = userData.name;
-
-//       // Simpan cookies
-//       Cookies.set("token", token, {
-//         expires: 1,
-//         path: "/",
-//       });
-
-//       Cookies.set("role", String(roleId), {
-//         expires: 1,
-//         path: "/",
-//       });
-
-//       Cookies.set("role_name", roleName, {
-//         expires: 1,
-//         path: "/",
-//       });
-
-//       Cookies.set("user_name", userName, {
-//         expires: 1,
-//         path: "/",
-//       });
-
-//       // Redirect berdasarkan role
-//       if (roleName === "superadmin") {
-//         router.push("/protected/super-admin");
-//       } else if (roleName === "admin") {
-//         router.push("/protected/admin");
-//       } else if (roleName === "manager") {
-//         router.push("/protected/manager");
-//       } else {
-//         setError("Role tidak dikenali");
-//       }
-//     } finally {
-//       setIsLoading(false);
-//     }
-//   };
-
-//   return (
-//     <div className="w-full px-4 md:px-0 md:max-w-md m-auto ">
-//       <h2 className="text-5xl font-semibold text-primary-500 text-center mb-10">
-//         Login
-//       </h2>
-//       <form
-//         onSubmit={handleSubmit}
-//         className="space-y-4 p-8 rounded-3xl shadow-2xl shadow-grey-400 bg-standardWhite"
-//       >
-//         <div>
-//           <label
-//             htmlFor="email"
-//             className="text-primary-500 text-md font-medium"
-//           >
-//             Email
-//           </label>
-//           <div className="flex items-center py-3 border-b-2 border-primary-100 bg-grey-100  focus-within:border-primary-500 transition-all duration-300 ease-out">
-//             <span className="px-2 text-primary-500">
-//               <UserCircleIcon size={24} />
-//             </span>
-//             <div className="h-4 border-r-2 border-grey-700"></div>
-//             <Input
-//               type={"email"}
-//               placeholder="Email"
-//               variant="auth"
-//               value={email}
-//               onChange={(e) => setEmail(e.target.value)}
-//             />
-//           </div>
-//           {emailError && (
-//             <p className="text-red-500 text-sm text-start">{emailError}</p>
-//           )}
-//         </div>
-//         <div>
-//           <label
-//             htmlFor="password"
-//             className="text-primary-500 text-md font-medium"
-//           >
-//             Kata Sandi
-//           </label>
-//           <div className="flex items-center py-3 border-b-2 border-primary-100 bg-grey-100  focus-within:border-primary-500 transition-all duration-300 ease-out">
-//             <span className="px-2 text-primary-500">
-//               <LockKeyIcon size={24} />
-//             </span>
-//             <div className="h-4 border-r-2 border-grey-700"></div>
-//             <Input
-//               type={isVisible ? "text" : "password"}
-//               placeholder="Kata Sandi"
-//               variant="auth"
-//               value={password}
-//               onChange={(e) => setPassword(e.target.value)}
-//             />
-//             <button
-//               type="button"
-//               onClick={() => setIsVisible(!isVisible)}
-//               className="px-2 text-primary-500 hover:text-primary-600 "
-//             >
-//               {isVisible ? <EyeIcon size={24} /> : <EyeSlashIcon size={24} />}
-//             </button>
-//           </div>
-//           {passwordError && (
-//             <p className="text-red-500 text-sm text-start">{passwordError}</p>
-//           )}
-//         </div>
-//         <div>
-//           <Link
-//             href="/"
-//             className="text-primary-500 font-medium hover:underline"
-//           >
-//             Lupa kata sandi?
-//           </Link>
-//         </div>
-
-//         <button
-//           disabled={isLoading}
-//           type="submit"
-//           className={`w-full text-standardWhite p-3 font-medium bg-primary-500 rounded-lg hover:bg-primary-600 ${isLoading ? "opacity-50 cursor-not-allowed" : ""
-//             }`}
-//         >
-//           {isLoading ? "Loading..." : "Masuk"}
-//         </button>
-//         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-//       </form>
-//     </div>
-//   );
-// }

@@ -139,8 +139,7 @@ export default function Navbar({ roleName }: NavbarProps) {
                   setOpenProfileMenu(false);
                   router.push(`/protected/${getRolePath()}/profile`);
                 }}
-                className="flex w-full items-center px-4 py-3 text-left text-sm hover:bg-grey-100"
-              >
+                className="flex w-full items-center px-4 py-3 text-left text-sm hover:bg-grey-100">
                 👤 Profile Saya
               </button>
 
@@ -149,8 +148,7 @@ export default function Navbar({ roleName }: NavbarProps) {
                   setOpenProfileMenu(false);
                   router.push(`/protected/${getRolePath()}/profile/edit`);
                 }}
-                className="flex w-full items-center px-4 py-3 text-left text-sm hover:bg-grey-100"
-              >
+                className="flex w-full items-center px-4 py-3 text-left text-sm hover:bg-grey-100">
                 ✏️ Edit Profile
               </button>
 
@@ -158,23 +156,12 @@ export default function Navbar({ roleName }: NavbarProps) {
 
               <button
                 onClick={handleLogout}
-                className="flex w-full items-center px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50"
-              >
-                🚪 Logout
+                className="flex w-full items-center px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50">
+                🚪 Keluar
               </button>
             </div>
           )}
         </div>
-
-        {/* ============================================= */}
-        {/* NOTIFICATION */}
-        {/* ============================================= */}
-        <button
-          type="button"
-          className="rounded-lg p-2 transition hover:bg-grey-100"
-        >
-          <BellIcon size={26} />
-        </button>
       </div>
     </div>
   );

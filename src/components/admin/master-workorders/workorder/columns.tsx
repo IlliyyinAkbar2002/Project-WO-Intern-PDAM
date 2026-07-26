@@ -44,6 +44,24 @@ export const columns = ({
     header: "Lokasi",
   },
   {
+    accessorFn: (row) => row.lemburSplId,
+    header: "Jenis WO",
+    cell: ({ row }) => {
+      const isLembur = !!row.original.lemburSplId;
+
+      return (
+        <span
+          className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+            isLembur
+              ? "bg-violet-100 text-violet-700 border border-violet-200"
+              : "bg-sky-100 text-sky-700 border border-sky-200"
+          }`}>
+          {isLembur ? "Lembur" : "Normal"}
+        </span>
+      );
+    },
+  },
+  {
     accessorKey: "status",
     header: "Status Pengerjaan",
     cell: ({ row }) => <StatusBadge status={row.original.status} />,

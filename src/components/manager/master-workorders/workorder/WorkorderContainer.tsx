@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import SingleSelect from "@/components/shared/fields/SingleSelect";
 import { PlusIcon } from "@phosphor-icons/react";
 import { MainTable } from "@/components/shared/tables/MainTable";
 import { Pagination } from "@/components/shared/tables/Pagination";
@@ -11,6 +12,7 @@ import { columns } from "./columns";
 import WorkorderModal from "../modals/master-form-modal/WorkorderModal";
 import WorkorderDetailModal from "../modals/detail-form-modal/WorkorderDetailModal";
 import { Workorder } from "@/types/workorderTypes";
+import { jenisWorkorderOptions } from "@/constants/options";
 
 interface WorkorderContainerProps {
   data: Workorder[];
@@ -38,13 +40,6 @@ export default function WorkorderContainer({
   const modal = searchParams.get("modal") as ModalType;
   const modalId = searchParams.get("modal_id");
 
-  /**
-   * Persiapan flow:
-   * Pengaduan → Create Workorder
-   *
-   * contoh:
-   * ?modal=create&kode_pengaduan=PGD-001
-   */
   const kodePengaduan = searchParams.get("kode_pengaduan");
 
   // =========================================================
@@ -52,6 +47,7 @@ export default function WorkorderContainer({
   // =========================================================
   const [searchText, setSearchText] = useState(search);
   const [tableData, setTableData] = useState(data);
+  const [jenis, setJenis] = useState(searchParams.get("jenis") ?? "");
 
   // =========================================================
   // SELECTED DATA
@@ -122,6 +118,22 @@ export default function WorkorderContainer({
   };
 
   // =========================================================
+  // HANDLE Filter Lembur/Normal
+  // =========================================================
+  const handleJenisChange = (selected: { value: string } | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (selected?.value) {
+      params.set("jenis", selected.value);
+    } else {
+      params.delete("jenis");
+    }
+    params.set("page", "1");
+    setJenis(selected?.value ?? "");
+    router.push(`?${params.toString()}`);
+  };
+
+  // =========================================================
   // Use effect untuk update table data ketika props data berubah
   // =========================================================
   useEffect(() => {
@@ -135,6 +147,14 @@ export default function WorkorderContainer({
       {/* ===================================================== */}
       <div className="flex items-center justify-between p-4">
         <h2 className="text-3xl font-semibold">Data Workorder</h2>
+          <SingleSelect
+            placeholder="Normal/Lembur"
+            value={
+              jenisWorkorderOptions.find((item) => item.value === jenis) ?? null
+            }
+            options={jenisWorkorderOptions}
+            onChange={handleJenisChange}
+          />
 
         <div className="flex items-center gap-4">
           {/* SEARCH */}
@@ -143,6 +163,7 @@ export default function WorkorderContainer({
             value={searchText}
             onChange={(e) => handleSearchChange(e.target.value)}
           />
+
 
           {/* PAGINATION */}
           <Pagination

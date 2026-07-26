@@ -132,8 +132,7 @@ export default function LocationRadiusContainer({
           onSubmit={(e) => {
             e.preventDefault();
             handleSubmit();
-          }}
-        >
+          }}>
           <SingleSelect
             label="Nama Lokasi"
             placeholder="Pilih Nama Lokasi"
@@ -142,20 +141,18 @@ export default function LocationRadiusContainer({
               null
             }
             onChange={handleChangeLocation as any}
-            options={locationOptions}
-          />
+            options={locationOptions}/>
 
           <Input
             label="Radius (meter)"
             type="number"
             min={1}
             value={radius}
-            onChange={(e) => setRadius(Number(e.target.value))}
-          />
+            onChange={(e) => setRadius(Number(e.target.value))}/>
 
-          <Button variant={"primary"} type="submit">
+          {/* <Button variant={"primary"} type="submit">
             Simpan
-          </Button>
+          </Button> */}
         </form>
       </div>
     </div>
