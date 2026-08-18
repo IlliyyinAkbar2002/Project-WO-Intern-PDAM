@@ -4,8 +4,6 @@ import { ColumnDef } from "@tanstack/react-table";
 import { EyeIcon } from "@phosphor-icons/react";
 import { Button, Badge } from "@/components/ui";
 import { HistoryWorkorder } from "@/types/workorderTypes";
-import { FilePdfIcon } from "@phosphor-icons/react";
-import { previewHistoryWorkorderPdf } from "@/services/workorderService";
 
 interface ColumnsProps {
   currentPage: number;
@@ -78,21 +76,12 @@ export const columns = ({
     id: "aksi",
     header: "Aksi",
     cell: ({ row }) => (
-      <div className="flex gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => openDetail(row.original.id)}>
-          <EyeIcon size={18} />
-        </Button>
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => previewHistoryWorkorderPdf(row.original.id)}>
-          <FilePdfIcon size={18} />
-        </Button>
-      </div>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => openDetail(row.original.id)}>
+        <EyeIcon size={18} />
+      </Button>
     ),
   },
 ];

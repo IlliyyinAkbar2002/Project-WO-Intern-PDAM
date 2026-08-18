@@ -174,6 +174,27 @@ export const getWorkorderHistoryDetail = async (
 };
 
 // =========================================================
+// EXPORT HISTORY WORKORDER PDF
+// =========================================================
+export const previewHistoryWorkorderPdf = async (id: number | string) => {
+  try {
+    const response = await api.get(`/v1/workorder/history/${id}/export-pdf`, {
+      responseType: "blob",
+    });
+
+    const blob = new Blob([response.data], {
+      type: "application/pdf",
+    });
+
+    const pdfUrl = URL.createObjectURL(blob);
+
+    window.open(pdfUrl, "_blank");
+  } catch (error) {
+    throw handleApiError(error, "Gagal menampilkan preview laporan workorder.");
+  }
+};
+
+// =========================================================
 // OPTIONAL ACTIONS
 // =========================================================
 export const extendWorkorder = async (

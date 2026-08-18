@@ -54,7 +54,6 @@ export default function WorkorderContainer({
   // =========================================================
   const selectedWorkorder = useMemo(() => {
     if (!modalId) return null;
-
     return data.find((item) => item.id === Number(modalId)) || null;
   }, [tableData, modalId]);
 
@@ -153,31 +152,26 @@ export default function WorkorderContainer({
               jenisWorkorderOptions.find((item) => item.value === jenis) ?? null
             }
             options={jenisWorkorderOptions}
-            onChange={handleJenisChange}
-          />
+            onChange={handleJenisChange}/>
 
         <div className="flex items-center gap-4">
           {/* SEARCH */}
           <Input
             placeholder="Pencarian..."
             value={searchText}
-            onChange={(e) => handleSearchChange(e.target.value)}
-          />
-
+            onChange={(e) => handleSearchChange(e.target.value)}/>
 
           {/* PAGINATION */}
           <Pagination
             totalPages={totalPages}
             currentPage={currentPage}
-            onPageChange={handlePageChange}
-          />
+            onPageChange={handlePageChange}/>
 
           {/* FLOW A: MANUAL CREATE */}
           <Button
             variant="primary"
             size="sm"
-            onClick={() => openModal("create")}
-          >
+            onClick={() => openModal("create")}>
             <PlusIcon size={18} />
             Buat Baru
           </Button>
@@ -195,8 +189,7 @@ export default function WorkorderContainer({
           setTableData,
         })}
         data={tableData}
-        loading={false}
-      />
+        loading={false}/>
 
       {/* ===================================================== */}
       {/* CREATE / EDIT MODAL */}

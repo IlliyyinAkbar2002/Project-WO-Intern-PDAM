@@ -11,15 +11,6 @@ export const getUsers = async (): Promise<User[]> => {
   }
 };
 
-export const resetUserPassword = async (id: number) => {
-  try {
-    const response = await api.post(`/v1/users/${id}/reset-password`);
-    return response.data;
-  } catch (error) {
-    throw new Error("Gagal reset password.");
-  }
-};
-
 export interface ToggleUserStatusResponse {
   message: string;
   is_active: boolean;
@@ -49,4 +40,35 @@ export const updateUser = async (id: number, payload: any) => {
   } catch (error) {
     throw new Error("Gagal update user.");
   }
+};
+
+export interface CheckEmailResponse {
+  success: boolean;
+  message: string;
+  email?: string;
+}
+
+export interface ResetPasswordResponse {
+  success: boolean;
+  message: string;
+}
+
+export const checkEmail = async (
+  email: string,
+): Promise<CheckEmailResponse> => {
+  const response = await api.post("/v1/auth/check-email", {
+    email,
+  });
+  return response.data;
+};
+
+export const newPassword = async (
+  email: string,
+  newPassword: string,
+): Promise<ResetPasswordResponse> => {
+  const response = await api.post("/v1/auth/new-password", {
+    email,
+    new_password: newPassword,
+  });
+  return response.data;
 };

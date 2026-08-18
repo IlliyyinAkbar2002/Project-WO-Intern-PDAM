@@ -142,7 +142,7 @@ export default function WorkorderModal({
         );
 
         setPengaduanOptions(
-          (pengaduanResp.data || []).map((item: PengaduanResponse) => ({
+          (pengaduanResp.data ?? []).map((item: any) => ({
             value: item.kode_pengaduan,
             label: `${item.kode_pengaduan} - ${item.judul}`,
             lokasi: item.lokasi ?? "",

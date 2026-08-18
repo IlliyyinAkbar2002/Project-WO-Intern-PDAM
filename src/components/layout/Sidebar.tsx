@@ -149,7 +149,7 @@ const menuItems: Record<string, MenuItem[]> = {
         },
         {
           label: "History Workorder",
-          href: `${baseAdminPath}/master-workorders/`,
+          href: `${baseAdminPath}/master-workorders/workorder/history-workorder`,
         },
       ],
     },
@@ -173,7 +173,7 @@ const menuItems: Record<string, MenuItem[]> = {
         },
         {
           label: "Log Penggunaan Material",
-          href: `${baseAdminPath}/master-materials/material-`,
+          href: `${baseAdminPath}/master-materials/material-data/material-log`,
         },
       ],
     },
@@ -212,7 +212,7 @@ const menuItems: Record<string, MenuItem[]> = {
         },
         {
           label: "History Workorder",
-          href: `${baseManagerPath}/master-workorders/`,
+          href: `${baseManagerPath}/master-workorders/workorder/history-workorder`,
         },
       ],
     },
@@ -236,7 +236,7 @@ const menuItems: Record<string, MenuItem[]> = {
         },
         {
           label: "Log Penggunaan Material",
-          href: `${baseManagerPath}/master-materials/material-`,
+          href: `${baseManagerPath}/master-materials/material-data/material-log`,
         },
       ],
     },

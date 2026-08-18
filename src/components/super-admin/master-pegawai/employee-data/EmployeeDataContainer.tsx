@@ -29,6 +29,7 @@ interface EmployeeDataContainerProps {
   search: string;
   sort: string;
   itemsPerPage: number;
+  refreshData: () => Promise<void>;
 }
 
 type Option = {
@@ -43,6 +44,7 @@ export default function EmployeeDataContainer({
   search,
   sort,
   itemsPerPage,
+  refreshData,
 }: EmployeeDataContainerProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -381,19 +383,17 @@ export default function EmployeeDataContainer({
             setShowCreate(false);
             setSelectedEmployeeId(undefined);
           }}
-          onSuccess={() => {
+          onSuccess={async () => {
+            await refreshData();
             setShowCreate(false);
             setSelectedEmployeeId(undefined);
-            router.refresh();
-          }}
-        />
+          }}/>
       )}
 
       {showDetail && detailData && (
         <EmployeeDetailModal
           data={detailData}
-          onClose={() => setShowDetail(false)}
-        />
+          onClose={() => setShowDetail(false)}/>
       )}
     </div>
   );

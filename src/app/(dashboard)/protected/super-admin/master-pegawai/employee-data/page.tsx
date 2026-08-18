@@ -25,29 +25,32 @@ export default function EmployeeDataPage() {
     currentPage: 1,
   });
 
-  useEffect(() => {
-    let mounted = true;
-
-    getPegawai(page, itemsPerPage, search, sort, departemenId, jabatanId)
-      .then((res) => {
-        if (!mounted) return;
-        setPegawaiData({
-          data: res.data ?? [],
-          totalPages: res.totalPages ?? 1,
-          currentPage: res.currentPage ?? page,
-        });
-      })
-      .catch(() => {
-        if (!mounted) return;
-        setPegawaiData({
-          data: [],
-          totalPages: 0,
-          currentPage: 1,
-        });
+  const fetchPegawai = async () => {
+    try {
+      const res = await getPegawai(
+        page,
+        itemsPerPage,
+        search,
+        sort,
+        departemenId,
+        jabatanId,
+      );
+      setPegawaiData({
+        data: res.data ?? [],
+        totalPages: res.totalPages ?? 1,
+        currentPage: res.currentPage ?? page,
       });
-    return () => {
-      mounted = false;
-    };
+    } catch {
+      setPegawaiData({
+        data: [],
+        totalPages: 0,
+        currentPage: 1,
+      });
+    }
+  };
+
+  useEffect(() => {
+    fetchPegawai();
   }, [page, search, sort, departemenId, jabatanId]);
 
   return (
@@ -58,6 +61,7 @@ export default function EmployeeDataPage() {
       search={search}
       sort={sort}
       itemsPerPage={itemsPerPage}
+      refreshData={fetchPegawai}
     />
   );
 }

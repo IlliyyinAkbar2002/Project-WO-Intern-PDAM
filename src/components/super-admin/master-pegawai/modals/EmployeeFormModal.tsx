@@ -110,7 +110,6 @@ export default function EmployeeFormModal({
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
-
     setForm((prev) => ({
       ...prev,
       [name]:
@@ -119,6 +118,25 @@ export default function EmployeeFormModal({
             ? ""
             : Number(value)
           : value,
+    }));
+  };
+
+  // =========================
+  // HANDLE NUMBER ONLY INPUTS
+  // =========================
+  const handleNumberOnly = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    let numericValue = value.replace(/\D/g, "");
+
+    if (name === "nip") {
+      numericValue = numericValue.slice(0, 18);
+    }
+    if (name === "telepon") {
+      numericValue = numericValue.slice(0, 15);
+    }
+    setForm((prev) => ({
+      ...prev,
+      [name]: numericValue,
     }));
   };
 
@@ -232,9 +250,12 @@ export default function EmployeeFormModal({
           <div>
             <label className="text-sm font-medium">NIP</label>
             <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               name="nip"
               value={form.nip}
-              onChange={handleChange}
+              onChange={handleNumberOnly}
               placeholder="Masukkan NIP"
               className="w-full border rounded px-3 py-2 mt-1"
               required
@@ -355,7 +376,6 @@ export default function EmployeeFormModal({
               {/* Jenis Kelamin */}
               <div>
                 <label className="text-sm font-medium">Jenis Kelamin</label>
-
                 <select
                   name="jenis_kelamin"
                   value={form.jenis_kelamin}
@@ -371,11 +391,13 @@ export default function EmployeeFormModal({
               {/* Nomor Telepon */}
               <div>
                 <label className="text-sm font-medium">Nomor Telepon</label>
-
                 <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   name="telepon"
                   value={form.telepon}
-                  onChange={handleChange}
+                  onChange={handleNumberOnly}
                   placeholder="08xxxxxxxxxx"
                   className="w-full border rounded px-3 py-2 mt-1"
                 />
@@ -405,7 +427,8 @@ export default function EmployeeFormModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border rounded">
+              className="px-4 py-2 border rounded"
+            >
               Batal
             </button>
 

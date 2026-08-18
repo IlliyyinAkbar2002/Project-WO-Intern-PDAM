@@ -86,7 +86,7 @@ export default function MaterialDataContainer({
       cell: (info) => info.getValue() || "-",
     },
     {
-      header: "Terpakai",
+      header: "Terpasang",
       accessorFn: (row) => row.terpakai,
       cell: (info) => info.getValue() || "-",
     },

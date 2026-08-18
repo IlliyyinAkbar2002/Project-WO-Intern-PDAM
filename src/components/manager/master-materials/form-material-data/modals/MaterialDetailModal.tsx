@@ -34,8 +34,7 @@ export default function MaterialDetailModal({
     const fetch = async () => {
       if (!submodalId) return;
       try {
-        const id = Number(submodalId);
-        const data = await getMaterialById(id);
+        const data = await getMaterialById(submodalId);
         setMaterial(data);
       } catch (err) {
         console.error(err);

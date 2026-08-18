@@ -91,6 +91,11 @@ export default function MaterialDataContainer({
       cell: (info) => info.getValue() || "-",
     },
     {
+      header: "Rusak",
+      accessorFn: (row) => row.rusak,
+      cell: (info) => info.getValue() || "-",
+    },
+    {
       header: "Tersedia",
       accessorFn: (row) => row.tersedia,
       cell: (info) => info.getValue() || "-",
