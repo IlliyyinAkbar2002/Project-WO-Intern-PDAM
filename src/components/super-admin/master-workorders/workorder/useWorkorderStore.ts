@@ -31,7 +31,7 @@ const initialFormData: WorkorderFormData = {
   namaWorkorder: "",
   deskripsi: "",
   lokasi: "",
-  prioritas: "Rendah",
+  prioritas: "" as PrioritasWorkorder,
   status: "Pending",
 };
 

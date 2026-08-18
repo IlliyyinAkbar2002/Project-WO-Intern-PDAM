@@ -212,6 +212,18 @@ export default function WorkorderModal({
   /* ========================================================= */
   const handleSubmit = async () => {
     try {
+      if (
+        !formData.kodePengaduan &&
+        !formData.jenisWorkorderId &&
+        !formData.assignedTo &&
+        !formData.prioritas
+      ) {
+        return Swal.fire({
+          icon: "warning",
+          title: "Validasi",
+          text: "Semua inputan wajib dipilih",
+        });
+      }
       if (!formData.kodePengaduan) {
         return Swal.fire({
           icon: "warning",
@@ -231,6 +243,13 @@ export default function WorkorderModal({
           icon: "warning",
           title: "Validasi",
           text: "SPV wajib dipilih",
+        });
+      }
+      if (!formData.prioritas) {
+        return Swal.fire({
+          icon: "warning",
+          title: "Validasi",
+          text: "Prioritas wajib dipilih",
         });
       }
       setIsSubmitting(true);

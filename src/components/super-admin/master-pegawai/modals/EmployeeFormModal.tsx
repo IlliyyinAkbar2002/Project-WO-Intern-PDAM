@@ -148,14 +148,44 @@ export default function EmployeeFormModal({
     try {
       setLoading(true);
       if (
-        !form.role_id ||
-        !form.departemen_id ||
-        !form.jabatan_id ||
-        !form.email ||
-        !form.nama ||
-        !form.nip
+        !form.nama.trim() &&
+        !form.nip.trim() &&
+        !form.email.trim() &&
+        (!isEdit ? !form.password.trim() : true) &&
+        !form.role_id &&
+        !form.departemen_id &&
+        !form.jabatan_id
       ) {
-        throw new Error("Semua field wajib diisi");
+        throw new Error("Wajib mengisi semua inputan");
+      }
+      if (!form.nama.trim()) {
+        throw new Error("Wajib mengisi Nama");
+      }
+      if (!form.nip.trim()) {
+        throw new Error("Wajib mengisi NIP");
+      }
+      if (!form.email.trim()) {
+        throw new Error("Wajib mengisi Email");
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(form.email)) {
+        throw new Error("Format email tidak sesuai");
+      }
+      if (!isEdit && !form.password.trim()) {
+        throw new Error("Wajib mengisi Password");
+      }
+      if (!isEdit && form.password.length < 8) {
+        throw new Error("Password minimal 8 karakter");
+      }
+      if (!form.role_id) {
+        throw new Error("Wajib memilih Role");
+      }
+      if (!form.departemen_id) {
+        throw new Error("Wajib memilih Departemen");
+      }
+      if (!form.jabatan_id) {
+        throw new Error("Wajib memilih Jabatan");
       }
       if (isEdit && employeeId) {
         const payload = {
@@ -243,8 +273,7 @@ export default function EmployeeFormModal({
               onChange={handleChange}
               placeholder="Masukkan nama lengkap"
               className="w-full border rounded px-3 py-2 mt-1"
-              required
-            />
+              />
           </div>
           {/* NIP */}
           <div>
@@ -257,22 +286,18 @@ export default function EmployeeFormModal({
               value={form.nip}
               onChange={handleNumberOnly}
               placeholder="Masukkan NIP"
-              className="w-full border rounded px-3 py-2 mt-1"
-              required
-            />
+              className="w-full border rounded px-3 py-2 mt-1"/>
           </div>
           {/* Email */}
           <div>
             <label className="text-sm font-medium">Email</label>
             <input
               name="email"
-              type="email"
+              type="text"
               value={form.email}
               onChange={handleChange}
               placeholder="Masukkan email"
-              className="w-full border rounded px-3 py-2 mt-1"
-              required
-            />
+              className="w-full border rounded px-3 py-2 mt-1"/>
           </div>
           {/* Password */}
           {!isEdit && (
@@ -285,14 +310,11 @@ export default function EmployeeFormModal({
                   value={form.password}
                   onChange={handleChange}
                   placeholder="Masukkan password minimal 8 karakter"
-                  className="w-full border rounded px-3 py-2 mt-1"
-                  required
-                />
+                  className="w-full border rounded px-3 py-2 mt-1"/>
                 <button
                   type="button"
                   onClick={() => setIsVisible((prev) => !prev)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-black hover:text-gray-700"
-                >
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-black hover:text-gray-700">
                   {isVisible ? (
                     <EyeIcon size={24} />
                   ) : (
@@ -309,9 +331,7 @@ export default function EmployeeFormModal({
               name="role_id"
               value={form.role_id ?? ""}
               onChange={handleChange}
-              className="w-full border rounded px-3 py-2 mt-1"
-              required
-            >
+              className="w-full border rounded px-3 py-2 mt-1">
               <option value="">Pilih Role</option>
               {meta.role.map((r) => (
                 <option key={r.id} value={r.id}>
@@ -328,9 +348,7 @@ export default function EmployeeFormModal({
               name="departemen_id"
               value={form.departemen_id ?? ""}
               onChange={handleChange}
-              className="w-full border rounded px-3 py-2 mt-1"
-              required
-            >
+              className="w-full border rounded px-3 py-2 mt-1">
               <option value="">Pilih Departemen</option>
               {meta.departemen.map((d) => (
                 <option key={d.id} value={d.id}>
@@ -347,9 +365,7 @@ export default function EmployeeFormModal({
               name="jabatan_id"
               value={form.jabatan_id ?? ""}
               onChange={handleChange}
-              className="w-full border rounded px-3 py-2 mt-1"
-              required
-            >
+              className="w-full border rounded px-3 py-2 mt-1">
               <option value="">Pilih Jabatan</option>
               {meta.jabatan.map((j) => (
                 <option key={j.id} value={j.id}>
@@ -369,8 +385,7 @@ export default function EmployeeFormModal({
                   name="tanggal_lahir"
                   value={form.tanggal_lahir}
                   onChange={handleChange}
-                  className="w-full border rounded px-3 py-2 mt-1"
-                />
+                  className="w-full border rounded px-3 py-2 mt-1"/>
               </div>
 
               {/* Jenis Kelamin */}
@@ -380,8 +395,7 @@ export default function EmployeeFormModal({
                   name="jenis_kelamin"
                   value={form.jenis_kelamin}
                   onChange={handleChange}
-                  className="w-full border rounded px-3 py-2 mt-1"
-                >
+                  className="w-full border rounded px-3 py-2 mt-1">
                   <option value="">Pilih Jenis Kelamin</option>
                   <option value="Laki-laki">Laki-laki</option>
                   <option value="Perempuan">Perempuan</option>
@@ -399,8 +413,7 @@ export default function EmployeeFormModal({
                   value={form.telepon}
                   onChange={handleNumberOnly}
                   placeholder="08xxxxxxxxxx"
-                  className="w-full border rounded px-3 py-2 mt-1"
-                />
+                  className="w-full border rounded px-3 py-2 mt-1"/>
               </div>
 
               {/* Alamat */}
@@ -416,8 +429,7 @@ export default function EmployeeFormModal({
                     }))
                   }
                   rows={3}
-                  className="w-full border rounded px-3 py-2 mt-1"
-                />
+                  className="w-full border rounded px-3 py-2 mt-1"/>
               </div>
             </>
           )}
@@ -435,8 +447,7 @@ export default function EmployeeFormModal({
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 bg-primary-500 text-white rounded"
-            >
+              className="px-4 py-2 bg-primary-500 text-white rounded">
               {loading
                 ? isEdit
                   ? "Memperbarui..."

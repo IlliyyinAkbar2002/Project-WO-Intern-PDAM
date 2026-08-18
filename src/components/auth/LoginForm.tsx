@@ -61,6 +61,18 @@ export default function LoginForm() {
       // ===============================================
       // VALIDATION
       // ===============================================
+      if (!email.trim() && !password.trim()) {
+        setError("Email dan password tidak boleh kosong.");
+        return;
+      }
+      if (!email.trim()) {
+        setEmailError("Email tidak boleh kosong.");
+        return;
+      }
+      if (!password.trim()) {
+        setPasswordError("Kata sandi tidak boleh kosong.");
+        return;
+      }
       if (!validateEmail(email)) {
         setEmailError("Format email tidak valid.");
         return;
@@ -247,7 +259,12 @@ export default function LoginForm() {
         <div>
           <Link
             href="/forgot-password"
+<<<<<<< HEAD
             className="font-medium text-primary-500 hover:underline">
+=======
+            className="font-medium text-primary-500 hover:underline"
+          >
+>>>>>>> 2199ecab530a871d8ca9b8c4e1d44d13a062c3d2
             Lupa kata sandi?
           </Link>
         </div>
@@ -268,4 +285,8 @@ export default function LoginForm() {
       </form>
     </div>
   );
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 2199ecab530a871d8ca9b8c4e1d44d13a062c3d2

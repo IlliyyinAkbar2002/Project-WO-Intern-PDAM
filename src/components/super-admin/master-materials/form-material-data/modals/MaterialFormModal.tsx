@@ -45,8 +45,8 @@ export default function MaterialFormModal({ onClose }: MaterialFormModalProps) {
   };
 
   const handleSubmit = async () => {
-    if (!nama.trim()) {
-      toast.error("Isi nama material terlebih dahulu");
+    if (!kodeMaterial && !nama.trim() && !jumlahStok) {
+      toast.error("Wajib mengisi semua inputan");
       return;
     }
 
